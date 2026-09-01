@@ -1,1 +1,23 @@
-к
+{
+  "name": "SHOHIN MARKET",
+  "short_name": "SHOHIN",
+  "description": "SHOHIN MARKET — онлайн-магазин продуктов с доставкой.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f1e5",
+  "theme_color": "#092f24",
+  "orientation": "portrait",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
