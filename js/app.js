@@ -10,18 +10,11 @@ import {
 } from "./products.js";
 
 import {
-    getCart,
-    getFavorites,
-    getOrders
-} from "./storage.js";
-
-import {
     addProductToCart,
-    updateCartQuantity,
-    increaseCartQuantity,
-    decreaseCartQuantity,
-    removeProductFromCart,
-    clearCart,
+    increaseCartQuantity as cartIncrease,
+    decreaseCartQuantity as cartDecrease,
+    removeProductFromCart as cartRemove,
+    clearCart as cartClear,
     getCartItems,
     getCartTotal,
     getCartCount
@@ -58,7 +51,7 @@ import {
 
 
 // ========================================
-// СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+// APP STATE
 // ========================================
 
 let currentCategory = "";
@@ -66,43 +59,70 @@ let currentSearch = "";
 
 
 // ========================================
-// ЗАПУСК
+// START APPLICATION
 // ========================================
 
 document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("SHOHIN MARKET запускается...");
 
-    await loadProducts();
+    try {
 
-    renderProducts();
-    renderFavorites();
-    renderCart();
-    renderOrders();
+        await loadProducts();
 
-    updateCartUI();
+        renderProducts();
+        renderFavorites();
+        renderCart();
+        renderOrders();
+        updateCartUI();
 
-    console.log(
-        "SHOHIN MARKET готов. Товаров:",
-        getProducts().length
-    );
+        console.log(
+            "SHOHIN MARKET готов.",
+            "Товаров:",
+            getProducts().length
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Ошибка запуска SHOHIN MARKET:",
+            error
+        );
+
+        showToast(
+            "Ошибка загрузки магазина"
+        );
+    }
 });
 
 
 // ========================================
-// НАВИГАЦИЯ
+// NAVIGATION
 // ========================================
 
 function openPage(pageId) {
 
-    document.querySelectorAll(".page").forEach(page => {
-        page.classList.remove("active");
-    });
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+            page.classList.remove("active");
+        });
 
-    const page = document.getElementById(pageId);
+    const page =
+        document.getElementById(pageId);
 
     if (page) {
+
         page.classList.add("active");
+
+    } else {
+
+        console.warn(
+            "Страница не найдена:",
+            pageId
+        );
+
+        return;
     }
 
     if (pageId === "favorites") {
@@ -111,6 +131,10 @@ function openPage(pageId) {
 
     if (pageId === "cart") {
         renderCart();
+    }
+
+    if (pageId === "checkout") {
+        updateCheckoutTotal();
     }
 
     if (pageId === "orders") {
@@ -130,27 +154,95 @@ function openPage(pageId) {
 
 function showToast(message) {
 
-    const toast =
+    let toast =
         document.getElementById("shopToast");
 
     if (!toast) {
-        return;
+
+        toast =
+            document.createElement("div");
+
+        toast.id = "shopToast";
+        toast.className = "toast";
+
+        document.body.appendChild(toast);
     }
 
-    toast.textContent = message;
+    toast.textContent =
+        String(message || "");
+
     toast.hidden = false;
 
-    clearTimeout(window.__shohinToastTimer);
+    clearTimeout(
+        window.__shohinToastTimer
+    );
 
     window.__shohinToastTimer =
         setTimeout(() => {
+
             toast.hidden = true;
+
         }, 2200);
 }
 
 
 // ========================================
-// КАРТОЧКА ТОВАРА
+// PRICE
+// ========================================
+
+function formatPrice(value) {
+
+    return Number(value || 0)
+        .toLocaleString("ru-RU");
+}
+
+
+// ========================================
+// DATE
+// ========================================
+
+function formatDate(date) {
+
+    if (!date) {
+        return "";
+    }
+
+    try {
+
+        return new Date(date)
+            .toLocaleDateString(
+                "ru-RU",
+                {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                }
+            );
+
+    } catch {
+
+        return "";
+    }
+}
+
+
+// ========================================
+// HTML SECURITY
+// ========================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+// ========================================
+// PRODUCT CARD
 // ========================================
 
 function productCard(product) {
@@ -158,25 +250,28 @@ function productCard(product) {
     const favorite =
         isProductFavorite(product.id);
 
-    const unavailable =
-        product.available !== true;
+    const available =
+        product.available === true;
 
     return `
+
         <article class="product-card">
 
             <div class="product-image">
 
-                <span>
-                    ${product.image || "🛒"}
-                </span>
-
                 ${
                     product.badge
-                    ? `<small class="product-badge">
+                    ? `
+                        <span class="product-badge">
                             ${escapeHTML(product.badge)}
-                       </small>`
+                        </span>
+                    `
                     : ""
                 }
+
+                <span class="product-emoji">
+                    ${product.image || "🛒"}
+                </span>
 
             </div>
 
@@ -196,7 +291,9 @@ function productCard(product) {
                 </h3>
 
                 <p>
-                    ${escapeHTML(product.description || "")}
+                    ${escapeHTML(
+                        product.description || ""
+                    )}
                 </p>
 
                 <div class="product-bottom">
@@ -208,27 +305,30 @@ function productCard(product) {
                         </strong>
 
                         <span>
-                            ${escapeHTML(product.unit)}
+                            ${escapeHTML(
+                                product.unit || ""
+                            )}
                         </span>
 
                     </div>
 
                     ${
-                        unavailable
+                        available
                         ? `
                             <button
+                                class="add-cart-button"
                                 type="button"
-                                disabled
+                                onclick="SHOHIN.addToCart(${product.id})"
                             >
-                                Нет
+                                +
                             </button>
                         `
                         : `
                             <button
                                 type="button"
-                                onclick="SHOHIN.addToCart(${product.id})"
+                                disabled
                             >
-                                +
+                                Нет
                             </button>
                         `
                     }
@@ -243,7 +343,7 @@ function productCard(product) {
 
 
 // ========================================
-// ТОВАРЫ
+// RENDER PRODUCTS
 // ========================================
 
 function renderProducts() {
@@ -255,24 +355,28 @@ function renderProducts() {
         return;
     }
 
-    let list = getProducts();
+    let products =
+        getProducts();
 
     if (currentCategory) {
-        list =
+
+        products =
             getProductsByCategory(
                 currentCategory
             );
     }
 
     if (currentSearch) {
-        list =
+
+        products =
             searchProductsData(
                 currentSearch
             );
 
         if (currentCategory) {
-            list =
-                list.filter(
+
+            products =
+                products.filter(
                     product =>
                         product.category ===
                         currentCategory
@@ -280,11 +384,12 @@ function renderProducts() {
         }
     }
 
-    if (!list.length) {
+    if (!products.length) {
 
         container.innerHTML = `
             <div class="empty-state">
-                Товары не найдены.
+                <div>🔎</div>
+                <p>Товары не найдены.</p>
             </div>
         `;
 
@@ -292,26 +397,46 @@ function renderProducts() {
     }
 
     container.innerHTML =
-        list.map(productCard).join("");
+        products
+            .map(productCard)
+            .join("");
 }
 
 
 // ========================================
-// КАТЕГОРИЯ
+// SEARCH
+// ========================================
+
+function search(query) {
+
+    currentSearch =
+        String(query || "")
+            .trim();
+
+    renderProducts();
+
+    openPage("home");
+}
+
+
+// ========================================
+// CATEGORY
 // ========================================
 
 function showCategory(category) {
 
-    currentCategory = category;
+    currentCategory =
+        String(category || "");
+
     currentSearch = "";
 
-    const search =
+    const input =
         document.getElementById(
             "searchInput"
         );
 
-    if (search) {
-        search.value = "";
+    if (input) {
+        input.value = "";
     }
 
     renderProducts();
@@ -321,7 +446,7 @@ function showCategory(category) {
 
 
 // ========================================
-// ВСЕ ТОВАРЫ
+// SHOW ALL
 // ========================================
 
 function showAllProducts() {
@@ -329,13 +454,13 @@ function showAllProducts() {
     currentCategory = "";
     currentSearch = "";
 
-    const search =
+    const input =
         document.getElementById(
             "searchInput"
         );
 
-    if (search) {
-        search.value = "";
+    if (input) {
+        input.value = "";
     }
 
     renderProducts();
@@ -345,33 +470,25 @@ function showAllProducts() {
 
 
 // ========================================
-// ПОИСК
-// ========================================
-
-function search(query) {
-
-    currentSearch =
-        String(query || "").trim();
-
-    renderProducts();
-
-    openPage("home");
-}
-
-
-// ========================================
-// ИЗБРАННОЕ
+// FAVORITES
 // ========================================
 
 function toggleFavorite(productId) {
 
-    const favorite =
+    const result =
         toggleProductFavorite(productId);
 
-    if (favorite) {
-        showToast("Добавлено в избранное");
+    if (result) {
+
+        showToast(
+            "Добавлено в избранное"
+        );
+
     } else {
-        showToast("Удалено из избранного");
+
+        showToast(
+            "Удалено из избранного"
+        );
     }
 
     renderProducts();
@@ -397,7 +514,8 @@ function renderFavorites() {
 
         container.innerHTML = `
             <div class="empty-state">
-                В избранном пока ничего нет.
+                <div>♡</div>
+                <p>В избранном пока ничего нет.</p>
             </div>
         `;
 
@@ -405,12 +523,14 @@ function renderFavorites() {
     }
 
     container.innerHTML =
-        products.map(productCard).join("");
+        products
+            .map(productCard)
+            .join("");
 }
 
 
 // ========================================
-// КОРЗИНА
+// ADD TO CART
 // ========================================
 
 function addToCart(productId) {
@@ -436,6 +556,10 @@ function addToCart(productId) {
 }
 
 
+// ========================================
+// CART
+// ========================================
+
 function renderCart() {
 
     const container =
@@ -459,121 +583,135 @@ function renderCart() {
 
         container.innerHTML = `
             <div class="empty-state">
-                Корзина пуста.
+                <div>🛒</div>
+                <p>Корзина пуста.</p>
             </div>
         `;
 
         if (totalElement) {
-            totalElement.textContent = "0 с.";
+            totalElement.textContent =
+                "0 с.";
         }
 
         return;
     }
 
     container.innerHTML =
-        items.map(item => `
+        items
+            .map(item => `
 
-            <article class="cart-item">
+                <article class="cart-item">
 
-                <div class="cart-item-image">
-                    ${item.image || "🛒"}
-                </div>
+                    <div class="cart-item-image">
+                        ${item.image || "🛒"}
+                    </div>
 
-                <div class="cart-item-info">
+                    <div class="cart-item-info">
 
-                    <h3>
-                        ${escapeHTML(item.name)}
-                    </h3>
+                        <h3>
+                            ${escapeHTML(item.name)}
+                        </h3>
 
-                    <span>
-                        ${formatPrice(item.price)} с.
-                        / ${escapeHTML(item.unit)}
-                    </span>
+                        <span>
+                            ${formatPrice(item.price)} с.
+                            / ${escapeHTML(item.unit || "")}
+                        </span>
 
-                    <strong>
-                        ${formatPrice(item.subtotal)} с.
-                    </strong>
+                        <strong>
+                            ${formatPrice(item.subtotal)} с.
+                        </strong>
 
-                </div>
+                    </div>
 
-                <div class="cart-quantity">
+                    <div class="cart-quantity">
+
+                        <button
+                            type="button"
+                            onclick="SHOHIN.decreaseCartQuantity(${item.id})"
+                        >
+                            −
+                        </button>
+
+                        <span>
+                            ${item.quantity}
+                        </span>
+
+                        <button
+                            type="button"
+                            onclick="SHOHIN.increaseCartQuantity(${item.id})"
+                        >
+                            +
+                        </button>
+
+                    </div>
 
                     <button
+                        class="cart-remove"
                         type="button"
-                        onclick="SHOHIN.decreaseCartQuantity(${item.id})"
+                        onclick="SHOHIN.removeProductFromCart(${item.id})"
+                        aria-label="Удалить"
                     >
-                        −
+                        ✕
                     </button>
 
-                    <span>
-                        ${item.quantity}
-                    </span>
+                </article>
 
-                    <button
-                        type="button"
-                        onclick="SHOHIN.increaseCartQuantity(${item.id})"
-                    >
-                        +
-                    </button>
-
-                </div>
-
-                <button
-                    type="button"
-                    onclick="SHOHIN.removeProductFromCart(${item.id})"
-                >
-                    ✕
-                </button>
-
-            </article>
-
-        `).join("");
+            `)
+            .join("");
 
     if (totalElement) {
+
         totalElement.textContent =
-            `${formatPrice(getCartTotal())} с.`;
+            `${formatPrice(
+                getCartTotal()
+            )} с.`;
     }
 }
 
+
+// ========================================
+// CART +
+// ========================================
 
 function increaseCartQuantity(productId) {
 
-    if (
-        increaseCartQuantityInternal(
-            productId
-        )
-    ) {
+    const success =
+        cartIncrease(productId);
+
+    if (success) {
+
         renderCart();
         updateCartUI();
+
     }
 }
 
+
+// ========================================
+// CART -
+// ========================================
 
 function decreaseCartQuantity(productId) {
 
-    if (
-        decreaseCartQuantityInternal(
-            productId
-        )
-    ) {
+    const success =
+        cartDecrease(productId);
+
+    if (success) {
+
         renderCart();
         updateCartUI();
+
     }
 }
 
 
-function increaseCartQuantityInternal(productId) {
-    return increaseCartQuantity(productId);
-}
+// ========================================
+// REMOVE FROM CART
+// ========================================
 
-function decreaseCartQuantityInternal(productId) {
-    return decreaseCartQuantity(productId);
-}
+function removeProductFromCart(productId) {
 
-
-function removeFromCart(productId) {
-
-    removeProductFromCart(productId);
+    cartRemove(productId);
 
     renderCart();
     updateCartUI();
@@ -584,9 +722,13 @@ function removeFromCart(productId) {
 }
 
 
+// ========================================
+// CLEAR CART
+// ========================================
+
 function clearShopCart() {
 
-    clearCart();
+    cartClear();
 
     renderCart();
     updateCartUI();
@@ -598,12 +740,49 @@ function clearShopCart() {
 
 
 // ========================================
+// CART UI
+// ========================================
+
+function updateCartUI() {
+
+    const count =
+        getCartCount();
+
+    document
+        .querySelectorAll(
+            "[data-cart-count]"
+        )
+        .forEach(element => {
+
+            element.textContent =
+                count;
+        });
+
+    const cartCount =
+        document.getElementById(
+            "cartCount"
+        );
+
+    if (cartCount) {
+
+        cartCount.textContent =
+            count;
+
+        cartCount.style.display =
+            count > 0
+            ? "flex"
+            : "none";
+    }
+}
+
+
+// ========================================
 // CHECKOUT
 // ========================================
 
 function openCheckout() {
 
-    if (getCartCount() === 0) {
+    if (getCartCount() <= 0) {
 
         showToast(
             "Корзина пуста"
@@ -612,28 +791,39 @@ function openCheckout() {
         return;
     }
 
-    const total =
-        document.getElementById(
-            "checkoutTotal"
-        );
-
-    if (total) {
-
-        total.textContent =
-            `Итого: ${formatPrice(getCartTotal())} с.`;
-    }
+    updateCheckoutTotal();
 
     openPage("checkout");
 }
 
 
+function updateCheckoutTotal() {
+
+    const element =
+        document.getElementById(
+            "checkoutTotal"
+        );
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent =
+        `Итого: ${formatPrice(
+            getCartTotal()
+        )} с.`;
+}
+
+
 // ========================================
-// ЗАКАЗ
+// CREATE ORDER
 // ========================================
 
 function submitOrder(event) {
 
-    event.preventDefault();
+    if (event) {
+        event.preventDefault();
+    }
 
     const name =
         document.getElementById(
@@ -660,10 +850,37 @@ function submitOrder(event) {
             'input[name="payment"]:checked'
         )?.value || "cash";
 
-    if (!name || !phone || !address) {
+    if (!name) {
 
         showToast(
-            "Заполните данные доставки"
+            "Введите имя"
+        );
+
+        return;
+    }
+
+    if (!phone) {
+
+        showToast(
+            "Введите телефон"
+        );
+
+        return;
+    }
+
+    if (!address) {
+
+        showToast(
+            "Введите адрес доставки"
+        );
+
+        return;
+    }
+
+    if (getCartCount() <= 0) {
+
+        showToast(
+            "Корзина пуста"
         );
 
         return;
@@ -683,13 +900,12 @@ function submitOrder(event) {
 
             lat: location.lat,
             lng: location.lng
-
         });
 
     if (!order) {
 
         showToast(
-            "Корзина пуста"
+            "Не удалось создать заказ"
         );
 
         return;
@@ -704,8 +920,10 @@ function submitOrder(event) {
         form.reset();
     }
 
-    renderOrders();
+    clearDeliveryLocation();
+
     renderCart();
+    renderOrders();
     updateCartUI();
 
     showToast(
@@ -717,7 +935,7 @@ function submitOrder(event) {
 
 
 // ========================================
-// ЗАКАЗЫ
+// ORDERS
 // ========================================
 
 function renderOrders() {
@@ -738,7 +956,8 @@ function renderOrders() {
 
         container.innerHTML = `
             <div class="empty-state">
-                Заказов пока нет.
+                <div>📦</div>
+                <p>Заказов пока нет.</p>
             </div>
         `;
 
@@ -746,82 +965,122 @@ function renderOrders() {
     }
 
     container.innerHTML =
-        orders.map(order => `
+        orders
+            .map(order => `
 
-            <article class="order-card">
+                <article class="order-card">
 
-                <div class="order-header">
+                    <div class="order-header">
 
-                    <strong>
-                        ${escapeHTML(order.id)}
-                    </strong>
+                        <strong>
+                            ${escapeHTML(order.id)}
+                        </strong>
 
-                    <span>
-                        ${formatDate(order.date)}
-                    </span>
+                        <span>
+                            ${formatDate(order.date)}
+                        </span>
 
-                </div>
+                    </div>
 
-                <div class="order-status">
-                    ${escapeHTML(order.statusText || "Заказ")}
-                </div>
+                    <div class="order-status">
+                        ${escapeHTML(
+                            order.statusText ||
+                            "Новый заказ"
+                        )}
+                    </div>
 
-                <div class="order-items">
+                    <div class="order-items">
+
+                        ${
+                            Array.isArray(order.items)
+                            ? order.items.map(item => `
+
+                                <div class="order-item">
+
+                                    <span>
+                                        ${escapeHTML(
+                                            item.name
+                                        )}
+                                        × ${item.quantity}
+                                    </span>
+
+                                    <strong>
+                                        ${formatPrice(
+                                            item.subtotal
+                                        )} с.
+                                    </strong>
+
+                                </div>
+
+                            `).join("")
+                            : ""
+                        }
+
+                    </div>
+
+                    <div class="order-total">
+
+                        <span>
+                            Итого
+                        </span>
+
+                        <strong>
+                            ${formatPrice(
+                                order.total
+                            )} с.
+                        </strong>
+
+                    </div>
 
                     ${
-                        order.items
-                        .map(item => `
-                            <div>
-                                <span>
-                                    ${escapeHTML(item.name)}
-                                    × ${item.quantity}
-                                </span>
+                        order.status !== "completed" &&
+                        order.status !== "cancelled"
+                        ? `
+                            <div class="order-actions">
 
-                                <strong>
-                                    ${formatPrice(item.subtotal)} с.
-                                </strong>
+                                <button
+                                    type="button"
+                                    onclick="SHOHIN.confirmOrderReceived('${escapeHTML(order.id)}')"
+                                >
+                                    Получен
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onclick="SHOHIN.cancelOrder('${escapeHTML(order.id)}')"
+                                >
+                                    Отменить
+                                </button>
+
                             </div>
-                        `)
-                        .join("")
+                        `
+                        : ""
                     }
 
-                </div>
+                </article>
 
-                <div class="order-total">
-
-                    <span>
-                        Итого
-                    </span>
-
-                    <strong>
-                        ${formatPrice(order.total)} с.
-                    </strong>
-
-                </div>
-
-                ${
-                    order.status !== "completed" &&
-                    order.status !== "cancelled"
-                    ? `
-                        <button
-                            type="button"
-                            onclick="SHOHIN.confirmOrderReceived('${order.id}')"
-                        >
-                            Подтвердить получение
-                        </button>
-                    `
-                    : ""
-                }
-
-            </article>
-
-        `).join("");
+            `)
+            .join("");
 }
 
 
+// ========================================
+// ORDER STATUS
+// ========================================
+
 function confirmOrderReceivedUI(orderId) {
 
-    confirmOrderReceived(orderId);
+    const success =
+        confirmOrderReceived(orderId);
+
+    if (!success) {
+
+        showToast(
+            "Заказ не найден"
+        );
+
+        return;
+    }
 
     renderOrders();
 
@@ -833,7 +1092,17 @@ function confirmOrderReceivedUI(orderId) {
 
 function cancelOrderUI(orderId) {
 
-    cancelOrder(orderId);
+    const success =
+        cancelOrder(orderId);
+
+    if (!success) {
+
+        showToast(
+            "Заказ не найден"
+        );
+
+        return;
+    }
 
     renderOrders();
 
@@ -842,6 +1111,10 @@ function cancelOrderUI(orderId) {
     );
 }
 
+
+// ========================================
+// REPEAT LAST ORDER
+// ========================================
 
 function repeatLastOrderUI() {
 
@@ -869,7 +1142,7 @@ function repeatLastOrderUI() {
 
 
 // ========================================
-// КАРТА / АДРЕС
+// MAP / DELIVERY ADDRESS
 // ========================================
 
 function openDeliveryMap() {
@@ -900,10 +1173,13 @@ function closeDeliveryMap() {
 
 function confirmDeliveryLocation() {
 
-    const address =
+    const input =
         document.getElementById(
             "mapAddress"
-        )?.value.trim();
+        );
+
+    const address =
+        input?.value.trim();
 
     if (!address) {
 
@@ -914,15 +1190,18 @@ function confirmDeliveryLocation() {
         return;
     }
 
-    setDeliveryAddress(address);
+    setDeliveryAddress(
+        address
+    );
 
-    const addressField =
+    const deliveryInput =
         document.getElementById(
             "deliveryAddress"
         );
 
-    if (addressField) {
-        addressField.value = address;
+    if (deliveryInput) {
+        deliveryInput.value =
+            address;
     }
 
     closeDeliveryMap();
@@ -930,95 +1209,6 @@ function confirmDeliveryLocation() {
     showToast(
         "Адрес выбран"
     );
-}
-
-
-// ========================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ========================================
-
-function formatPrice(value) {
-
-    return Number(value || 0)
-        .toLocaleString("ru-RU");
-}
-
-
-function formatDate(date) {
-
-    if (!date) {
-        return "";
-    }
-
-    try {
-
-        return new Date(date)
-            .toLocaleDateString(
-                "ru-RU"
-            );
-
-    } catch {
-
-        return "";
-    }
-}
-
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-// ========================================
-// ОБНОВЛЕНИЕ UI
-// ========================================
-
-function updateCartUI() {
-
-    const count =
-        getCartCount();
-
-    document
-        .querySelectorAll(
-            "[data-cart-count]"
-        )
-        .forEach(element => {
-
-            element.textContent =
-                count;
-        });
-
-    const cartCount =
-        document.getElementById(
-            "cartCount"
-        );
-
-    if (cartCount) {
-
-        cartCount.textContent =
-            count;
-
-        cartCount.style.display =
-            count > 0
-                ? "flex"
-                : "none";
-    }
-}
-
-
-function refreshShopUI() {
-
-    renderProducts();
-    renderFavorites();
-    renderCart();
-    renderOrders();
-    updateCartUI();
 }
 
 
@@ -1049,13 +1239,28 @@ function toggleSHMenu() {
 function openWhatsApp() {
 
     showToast(
-        "WhatsApp будет подключён после добавления номера магазина"
+        "WhatsApp будет подключён позже"
     );
 }
 
 
 // ========================================
-// ГЛОБАЛЬНЫЙ API SHOHIN
+// REFRESH EVERYTHING
+// ========================================
+
+function refreshShopUI() {
+
+    renderProducts();
+    renderFavorites();
+    renderCart();
+    renderOrders();
+    updateCartUI();
+    updateCheckoutTotal();
+}
+
+
+// ========================================
+// GLOBAL SHOHIN API
 // ========================================
 
 window.SHOHIN = {
@@ -1066,28 +1271,27 @@ window.SHOHIN = {
 
     // Search
     search,
+    category: showCategory,
     showCategory,
+    showAll: showAllProducts,
     showAllProducts,
 
     // Cart
-    cart: getCart,
     addToCart,
     increaseCartQuantity,
     decreaseCartQuantity,
-    removeProductFromCart:
-        removeFromCart,
-    clearCart:
-        clearShopCart,
+    removeProductFromCart,
+    clearCart: clearShopCart,
     getCartItems,
     getCartTotal,
     getCartCount,
 
     // Favorites
-    favorites: getFavoriteProducts,
     addToFavorites,
     removeFromFavorites,
     toggleFavorite,
     isProductFavorite,
+    getFavoriteProducts,
     getFavoritesCount,
 
     // Orders
@@ -1096,14 +1300,17 @@ window.SHOHIN = {
     getOrderById,
     updateOrderStatus,
     getLastOrder,
+
     confirmOrderReceived:
         confirmOrderReceivedUI,
+
     cancelOrder:
         cancelOrderUI,
+
     repeatLastOrder:
         repeatLastOrderUI,
 
-    // Map
+    // Delivery / Map
     setDeliveryLocation,
     getDeliveryLocation,
     setDeliveryAddress,
@@ -1111,49 +1318,84 @@ window.SHOHIN = {
     hasDeliveryLocation,
     clearDeliveryLocation,
 
-    // UI
+    // Pages
     openPage,
+    openCheckout,
+
+    // UI
     refreshShopUI,
     updateCartUI,
     showToast,
-    openCheckout,
+
+    // Checkout
     submitOrder,
+    updateCheckoutTotal,
+
+    // Map
     openDeliveryMap,
     closeDeliveryMap,
     confirmDeliveryLocation,
+
+    // Menu
     toggleSHMenu,
+
+    // Contact
     openWhatsApp
 };
 
 
 // ========================================
-// GLOBAL FUNCTIONS FOR HTML
+// GLOBAL FUNCTIONS
 // ========================================
 
-window.renderProducts = renderProducts;
-window.renderFavorites = renderFavorites;
-window.renderCart = renderCart;
-window.renderOrders = renderOrders;
+window.renderProducts =
+    renderProducts;
 
-window.performSearch = () => {
+window.renderFavorites =
+    renderFavorites;
 
-    const input =
-        document.getElementById(
-            "searchInput"
+window.renderCart =
+    renderCart;
+
+window.renderOrders =
+    renderOrders;
+
+window.performSearch =
+    () => {
+
+        const input =
+            document.getElementById(
+                "searchInput"
+            );
+
+        search(
+            input?.value || ""
         );
+    };
 
-    search(
-        input?.value || ""
-    );
-};
+window.showCategory =
+    showCategory;
 
-window.showCategory = showCategory;
-window.showAllProducts = showAllProducts;
-window.openCheckout = openCheckout;
-window.submitOrder = submitOrder;
-window.openDeliveryMap = openDeliveryMap;
-window.closeDeliveryMap = closeDeliveryMap;
+window.showAllProducts =
+    showAllProducts;
+
+window.openCheckout =
+    openCheckout;
+
+window.submitOrder =
+    submitOrder;
+
+window.openDeliveryMap =
+    openDeliveryMap;
+
+window.closeDeliveryMap =
+    closeDeliveryMap;
+
 window.confirmDeliveryLocation =
     confirmDeliveryLocation;
-window.toggleSHMenu = toggleSHMenu;
-window.openWhatsApp = openWhatsApp;
+
+window.toggleSHMenu =
+    toggleSHMenu;
+
+window.openWhatsApp =
+    openWhatsApp;
