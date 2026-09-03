@@ -1,1355 +1,206 @@
-import { products } from "./products.js";
-import {
-    getCart,
-    saveCart,
-    getFavorites,
-    saveFavorites,
-    getOrders,
-    saveOrders
-} from "./storage.js";
+// SHOHIN MARKET
+// Main application
 
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("SHOHIN MARKET запускается...");
 
-/* =========================================
-   SHOHIN MARKET
-   MAIN APPLICATION
-========================================= */
+    await loadProducts();
 
-const app = document.getElementById("app");
+    console.log("SHOHIN MARKET готов.");
 
-
-/* =========================================
-   APPLICATION STATE
-========================================= */
-
-const state = {
-    page: "home",
-
-    products: products,
-
-    cart: getCart(),
-
-    favorites: getFavorites(),
-
-    orders: getOrders(),
-
-    category: "all",
-
-    search: ""
-};
-
-
-/* =========================================
-   APP START
-========================================= */
-
-function init() {
-
-    renderApp();
-
-    registerServiceWorker();
-
-}
-
-
-/* =========================================
-   MAIN APP RENDER
-========================================= */
-
-function renderApp() {
-
-    app.innerHTML = `
-
-        <div class="app">
-
-            ${renderHeader()}
-
-            <main id="pages">
-
-                ${renderHome()}
-
-            </main>
-
-            ${renderBottomNavigation()}
-
-            ${renderSHMenu()}
-
-        </div>
-
-    `;
-
-    bindEvents();
-
-}
-
-
-/* =========================================
-   HEADER
-========================================= */
-
-function renderHeader() {
-
-    return `
-
-        <header class="header">
-
-            <div class="header-row">
-
-                <div class="brand">
-
-                    <div class="logo">
-                        SH
-                    </div>
-
-                    <div>
-
-                        <div class="brand-name">
-                            SHOHIN MARKET
-                        </div>
-
-                        <div class="brand-sub">
-                            ПРОДУКТЫ • ДОМ • ДОСТАВКА
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="header-icons">
-
-                    <button
-                        class="icon-btn"
-                        data-action="favorites"
-                        aria-label="Избранное"
-                    >
-                        ♡
-                    </button>
-
-
-                    <button
-                        class="icon-btn"
-                        data-action="cart"
-                        aria-label="Корзина"
-                    >
-                        🛒
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div class="search-wrap">
-
-                <span class="search-icon">
-                    ⌕
-                </span>
-
-                <input
-                    id="search"
-                    class="search"
-                    type="search"
-                    placeholder="Найти продукты..."
-                    autocomplete="off"
-                >
-
-                <button
-                    id="clearSearch"
-                    class="clear-search"
-                    type="button"
-                >
-                    ×
-                </button>
-
-            </div>
-
-        </header>
-
-    `;
-
-}
-
-
-/* =========================================
-   HOME
-========================================= */
-
-function renderHome() {
-
-    return `
-
-        <section
-            id="home"
-            class="page active"
-        >
-
-
-            <div class="hero">
-
-                <div class="hero-small">
-                    SHOHIN MARKET
-                </div>
-
-
-                <h1>
-                    Свежие продукты
-                    <br>
-                    рядом с вами.
-                </h1>
-
-
-                <p>
-                    Выбирайте продукты, оформляйте
-                    заказ и получайте доставку
-                    прямо к двери.
-                </p>
-
-
-                <button
-                    class="hero-button"
-                    data-action="products"
-                >
-                    Смотреть товары →
-                </button>
-
-            </div>
-
-
-            <div class="section-head">
-
-                <h2>
-                    Категории
-                </h2>
-
-                <button
-                    class="see-all"
-                    data-action="all-products"
-                >
-                    Все товары
-                </button>
-
-            </div>
-
-
-            <div class="categories">
-
-                ${renderCategories()}
-
-            </div>
-
-
-            <div
-                class="section-head"
-                id="productsTitle"
-            >
-
-                <h2>
-                    Популярные товары
-                </h2>
-
-                <button
-                    class="see-all"
-                    data-action="all-products"
-                >
-                    Все
-                </button>
-
-            </div>
-
-
-            <div
-                id="products"
-                class="products"
-            >
-
-                ${renderProducts()}
-
-            </div>
-
-
-            <div
-                id="noResults"
-                class="no-results"
-            >
-
-                <div style="font-size:45px">
-                    🔎
-                </div>
-
-                <h3>
-                    Ничего не найдено
-                </h3>
-
-                <p>
-                    Попробуйте другое название товара.
-                </p>
-
-            </div>
-
-        </section>
-
-    `;
-
-}
-
-
-/* =========================================
-   CATEGORIES
-========================================= */
-
-function renderCategories() {
-
-    const categories = [
-
-        ["Овощи", "🥦"],
-
-        ["Фрукты", "🍎"],
-
-        ["Молочное", "🥛"],
-
-        ["Мясо", "🥩"],
-
-        ["Напитки", "🧃"],
-
-        ["Бакалея", "🍚"]
-
-    ];
-
-
-    return categories.map(
-        ([name, icon]) => `
-
-            <button
-                class="category"
-                data-category="${name}"
-            >
-
-                <div class="category-icon">
-                    ${icon}
-                </div>
-
-                <div class="category-name">
-                    ${name}
-                </div>
-
-            </button>
-
-        `
-    ).join("");
-
-}
-
-
-/* =========================================
-   PRODUCTS
-========================================= */
-
-function getVisibleProducts() {
-
-    let result = [...state.products];
-
-
-    if (state.category !== "all") {
-
-        result = result.filter(
-            product =>
-                product.category === state.category
-        );
-
-    }
-
-
-    if (state.search) {
-
-        const query =
-            state.search.toLowerCase();
-
-        result = result.filter(product =>
-
-            product.name
-                .toLowerCase()
-                .includes(query)
-
-            ||
-
-            product.category
-                .toLowerCase()
-                .includes(query)
-
-        );
-
-    }
-
-
-    return result;
-
-}
-
-
-function renderProducts() {
-
-    const list =
-        getVisibleProducts();
-
-
-    if (!list.length) {
-
-        return "";
-
-    }
-
-
-    return list.map(
-        product => {
-
-            const favorite =
-                state.favorites.includes(product.id);
-
-
-            return `
-
-                <article
-                    class="product"
-                    data-product-id="${product.id}"
-                >
-
-                    ${
-                        product.badge
-                        ?
-                        `
-                        <div class="badge">
-                            ${product.badge}
-                        </div>
-                        `
-                        :
-                        ""
-                    }
-
-
-                    <button
-                        class="favorite ${
-                            favorite ? "active" : ""
-                        }"
-                        data-favorite="${product.id}"
-                    >
-                        ${
-                            favorite
-                            ? "♥"
-                            : "♡"
-                        }
-                    </button>
-
-
-                    <div class="product-image">
-
-                        ${
-                            product.image
-                            ?
-                            `
-                            <img
-                                src="${product.image}"
-                                alt="${product.name}"
-                                loading="lazy"
-                            >
-                            `
-                            :
-                            product.emoji || "🛒"
-                        }
-
-                    </div>
-
-
-                    <div class="product-info">
-
-                        <div class="product-name">
-                            ${product.name}
-                        </div>
-
-
-                        <div class="product-meta">
-                            ${product.meta}
-                        </div>
-
-
-                        <div class="product-bottom">
-
-                            <div class="price">
-
-                                ${product.price}
-
-                                <span class="currency">
-                                    сомони
-                                </span>
-
-                            </div>
-
-
-                            <button
-                                class="add-btn"
-                                data-add-cart="${product.id}"
-                            >
-                                +
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            `;
-
-        }
-    ).join("");
-
-}
-
-
-/* =========================================
-   BOTTOM NAVIGATION
-========================================= */
-
-function renderBottomNavigation() {
-
-    return `
-
-        <nav class="bottom">
-
-            <button
-                class="nav-btn active"
-                data-page="home"
-            >
-
-                <div class="nav-icon">
-                    ⌂
-                </div>
-
-                Главная
-
-            </button>
-
-
-            <button
-                class="nav-btn"
-                data-page="favorites"
-            >
-
-                <div class="nav-icon">
-                    ♡
-                </div>
-
-                Товары
-
-            </button>
-
-
-            <button
-                id="shButton"
-                class="sh-btn"
-                type="button"
-            >
-                SH
-            </button>
-
-
-            <button
-                class="nav-btn"
-                data-page="cart"
-            >
-
-                <div class="nav-icon">
-                    🛒
-                </div>
-
-                Корзина
-
-            </button>
-
-
-            <button
-                class="nav-btn"
-                data-page="orders"
-            >
-
-                <div class="nav-icon">
-                    📦
-                </div>
-
-                Заказы
-
-            </button>
-
-        </nav>
-
-    `;
-
-}
-
-
-/* =========================================
-   SH MENU
-========================================= */
-
-function renderSHMenu() {
-
-    return `
-
-        <div
-            id="shMenu"
-            class="sh-menu"
-        >
-
-            <div
-                style="
-                    color:var(--lime);
-                    font-size:11px;
-                    font-weight:900;
-                    margin:2px 4px 12px;
-                    letter-spacing:1px;
-                "
-            >
-                SHOHIN MENU
-            </div>
-
-
-            <div class="menu-grid">
-
-                <button
-                    class="menu-item"
-                    data-page="home"
-                >
-                    <div class="menu-item-icon">
-                        ⌂
-                    </div>
-                    Главная
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="all-products"
-                >
-                    <div class="menu-item-icon">
-                        ▦
-                    </div>
-                    Категории
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-page="favorites"
-                >
-                    <div class="menu-item-icon">
-                        ♡
-                    </div>
-                    Товары ❤️
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-page="cart"
-                >
-                    <div class="menu-item-icon">
-                        🛒
-                    </div>
-                    Корзина
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-page="orders"
-                >
-                    <div class="menu-item-icon">
-                        📦
-                    </div>
-                    Заказы
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="contacts"
-                >
-                    <div class="menu-item-icon">
-                        💬
-                    </div>
-                    WhatsApp
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="share"
-                >
-                    <div class="menu-item-icon">
-                        ↗
-                    </div>
-                    Поделиться
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="about"
-                >
-                    <div class="menu-item-icon">
-                        ℹ
-                    </div>
-                    О магазине
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="policy"
-                >
-                    <div class="menu-item-icon">
-                        📜
-                    </div>
-                    Политика
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="repeat"
-                >
-                    <div class="menu-item-icon">
-                        ↻
-                    </div>
-                    Повторить заказ
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="help"
-                >
-                    <div class="menu-item-icon">
-                        ?
-                    </div>
-                    Помощь
-                </button>
-
-
-                <button
-                    class="menu-item"
-                    data-action="rate"
-                >
-                    <div class="menu-item-icon">
-                        ★
-                    </div>
-                    Оценить
-                </button>
-
-            </div>
-
-        </div>
-
-    `;
-
-}
-
-
-/* =========================================
-   EVENTS
-========================================= */
-
-function bindEvents() {
-
-    document.addEventListener(
-        "click",
-        handleClick
-    );
-
-
-    const search =
-        document.getElementById("search");
-
-
-    if (search) {
-
-        search.addEventListener(
-            "input",
-            handleSearch
-        );
-
-    }
-
-}
-
-
-/* =========================================
-   CLICK HANDLER
-========================================= */
-
-function handleClick(event) {
-
-    const pageButton =
-        event.target.closest("[data-page]");
-
-
-    if (pageButton) {
-
-        openPage(
-            pageButton.dataset.page
-        );
-
-        return;
-
-    }
-
-
-    const category =
-        event.target.closest("[data-category]");
-
-
-    if (category) {
-
-        state.category =
-            category.dataset.category;
-
-        state.search = "";
-
-        const search =
-            document.getElementById("search");
-
-        if (search) {
-            search.value = "";
-        }
-
-        refreshProducts();
-
-        return;
-
-    }
-
-
-    const add =
-        event.target.closest("[data-add-cart]");
-
-
-    if (add) {
-
-        addToCart(
-            Number(add.dataset.addCart)
-        );
-
-        return;
-
-    }
-
-
-    const favorite =
-        event.target.closest("[data-favorite]");
-
-
-    if (favorite) {
-
-        toggleFavorite(
-            Number(favorite.dataset.favorite)
-        );
-
-        return;
-
-    }
-
-
-    const action =
-        event.target.closest("[data-action]");
-
-
-    if (action) {
-
-        handleAction(
-            action.dataset.action
-        );
-
-        return;
-
-    }
-
-
-    if (
-        event.target.closest("#shButton")
-    ) {
-
-        toggleSH();
-
-    }
-
-}
-
-
-/* =========================================
-   SEARCH
-========================================= */
-
-function handleSearch(event) {
-
-    state.search =
-        event.target.value
-            .trim()
-            .toLowerCase();
-
-
-    const clear =
-        document.getElementById("clearSearch");
-
-
-    if (clear) {
-
-        clear.style.display =
-            state.search
-            ? "block"
-            : "none";
-
-    }
-
-
-    refreshProducts();
-
-}
-
-
-/* =========================================
-   REFRESH PRODUCTS
-========================================= */
-
-function refreshProducts() {
-
-    const container =
-        document.getElementById("products");
-
-    const noResults =
-        document.getElementById("noResults");
-
-
-    if (!container) return;
-
-
-    const html =
+    if (typeof renderProducts === "function") {
         renderProducts();
-
-
-    container.innerHTML =
-        html;
-
-
-    const visible =
-        getVisibleProducts();
-
-
-    if (noResults) {
-
-        noResults.classList.toggle(
-            "show",
-            visible.length === 0
-        );
-
     }
 
-
-    const title =
-        document
-            .getElementById("productsTitle")
-            ?.querySelector("h2");
-
-
-    if (title) {
-
-        title.textContent =
-            state.search
-            ? "Результаты поиска"
-            : state.category === "all"
-                ? "Популярные товары"
-                : state.category;
-
+    if (typeof updateCartUI === "function") {
+        updateCartUI();
     }
 
+    if (typeof renderFavorites === "function") {
+        renderFavorites();
+    }
+
+    if (typeof renderOrders === "function") {
+        renderOrders();
+    }
+});
+
+
+// ================================
+// Навигация
+// ================================
+
+function openPage(pageId) {
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.remove("active");
+    });
+
+    const page = document.getElementById(pageId);
+
+    if (page) {
+        page.classList.add("active");
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
-/* =========================================
-   CART
-========================================= */
+// ================================
+// Обновление интерфейса
+// ================================
 
-function addToCart(id) {
+function refreshShopUI() {
 
-    const existing =
-        state.cart.find(
-            item => item.id === id
-        );
-
-
-    if (existing) {
-
-        existing.qty++;
-
-    } else {
-
-        state.cart.push({
-            id,
-            qty: 1
-        });
-
+    if (typeof renderProducts === "function") {
+        renderProducts();
     }
 
+    if (typeof renderFavorites === "function") {
+        renderFavorites();
+    }
 
-    saveCart(state.cart);
+    if (typeof renderCart === "function") {
+        renderCart();
+    }
 
-    showToast(
-        "Товар добавлен в корзину 🛒"
-    );
+    if (typeof renderOrders === "function") {
+        renderOrders();
+    }
 
+    updateCartUI();
 }
 
 
-/* =========================================
-   FAVORITES
-========================================= */
+// ================================
+// Счётчик корзины
+// ================================
 
-function toggleFavorite(id) {
+function updateCartUI() {
 
-    if (
-        state.favorites.includes(id)
-    ) {
+    const count = typeof getCartCount === "function"
+        ? getCartCount()
+        : 0;
 
-        state.favorites =
-            state.favorites.filter(
-                item => item !== id
-            );
+    document.querySelectorAll("[data-cart-count]").forEach(element => {
+        element.textContent = count;
+    });
 
-        showToast(
-            "Удалено из избранного"
-        );
+    const cartCount = document.getElementById("cartCount");
 
-    } else {
-
-        state.favorites.push(id);
-
-        showToast(
-            "Добавлено в избранное ❤️"
-        );
-
+    if (cartCount) {
+        cartCount.textContent = count;
+        cartCount.style.display = count > 0 ? "flex" : "none";
     }
-
-
-    saveFavorites(
-        state.favorites
-    );
-
-
-    refreshProducts();
-
 }
 
 
-/* =========================================
-   PAGE
-========================================= */
-
-function openPage(page) {
-
-    closeSH();
-
-
-    if (page === "home") {
-
-        state.page = "home";
-
-        renderApp();
-
-        return;
-
-    }
-
-
-    showToast(
-        "Раздел «" +
-        page +
-        "» подключим следующим модулем"
-    );
-
-}
-
-
-/* =========================================
-   SH MENU
-========================================= */
-
-function toggleSH() {
-
-    const menu =
-        document.getElementById("shMenu");
-
-    const button =
-        document.getElementById("shButton");
-
-
-    if (!menu || !button) return;
-
-
-    const open =
-        menu.classList.toggle("open");
-
-
-    button.classList.toggle(
-        "open",
-        open
-    );
-
-}
-
-
-function closeSH() {
-
-    const menu =
-        document.getElementById("shMenu");
-
-    const button =
-        document.getElementById("shButton");
-
-
-    if (menu) {
-        menu.classList.remove("open");
-    }
-
-
-    if (button) {
-        button.classList.remove("open");
-    }
-
-}
-
-
-/* =========================================
-   ACTIONS
-========================================= */
-
-function handleAction(action) {
-
-    switch (action) {
-
-        case "products":
-
-        case "all-products":
-
-            state.category = "all";
-            state.search = "";
-
-            refreshProducts();
-
-            document
-                .getElementById("productsTitle")
-                ?.scrollIntoView({
-                    behavior: "smooth"
-                });
-
-            break;
-
-
-        case "favorites":
-
-            openPage("favorites");
-
-            break;
-
-
-        case "cart":
-
-            openPage("cart");
-
-            break;
-
-
-        case "share":
-
-            shareApp();
-
-            break;
-
-
-        case "contacts":
-
-            showToast(
-                "WhatsApp подключим следующим модулем"
-            );
-
-            break;
-
-
-        case "about":
-
-            showToast(
-                "Раздел «О магазине» подключим следующим модулем"
-            );
-
-            break;
-
-
-        case "policy":
-
-            showToast(
-                "Политика подключим следующим модулем"
-            );
-
-            break;
-
-
-        case "repeat":
-
-            showToast(
-                "Повтор заказа подключим следующим модулем"
-            );
-
-            break;
-
-
-        case "help":
-
-            showToast(
-                "Помощь подключим следующим модулем"
-            );
-
-            break;
-
-
-        case "rate":
-
-            showToast(
-                "Оценка магазина появится позже"
-            );
-
-            break;
-
-    }
-
-}
-
-
-/* =========================================
-   SHARE
-========================================= */
-
-async function shareApp() {
-
-    const data = {
-
-        title: "SHOHIN MARKET",
-
-        text:
-            "SHOHIN MARKET — онлайн-магазин продуктов.",
-
-        url:
-            window.location.href
-
-    };
-
-
-    if (navigator.share) {
-
-        try {
-
-            await navigator.share(data);
-
-        } catch (error) {}
-
-    } else {
-
-        showToast(
-            "Поделиться пока недоступно"
-        );
-
-    }
-
-}
-
-
-/* =========================================
-   TOAST
-========================================= */
-
-let toastTimer;
-
+// ================================
+// Toast
+// ================================
 
 function showToast(message) {
 
-    let toast =
-        document.getElementById("toast");
-
+    let toast = document.getElementById("shopToast");
 
     if (!toast) {
+        toast = document.createElement("div");
 
-        toast =
-            document.createElement("div");
+        toast.id = "shopToast";
 
-        toast.id = "toast";
-
-        toast.className = "toast";
+        toast.style.position = "fixed";
+        toast.style.left = "50%";
+        toast.style.bottom = "90px";
+        toast.style.transform = "translateX(-50%)";
+        toast.style.zIndex = "9999";
+        toast.style.padding = "12px 18px";
+        toast.style.borderRadius = "14px";
+        toast.style.background = "#092f24";
+        toast.style.color = "#ffffff";
+        toast.style.fontSize = "14px";
+        toast.style.boxShadow = "0 8px 25px rgba(0,0,0,.2)";
+        toast.style.transition = "opacity .2s";
 
         document.body.appendChild(toast);
-
     }
 
+    toast.textContent = message;
+    toast.style.opacity = "1";
 
-    toast.textContent =
-        message;
+    clearTimeout(window.__shopToastTimer);
 
-
-    toast.classList.add("show");
-
-
-    clearTimeout(toastTimer);
-
-
-    toastTimer =
-        setTimeout(() => {
-
-            toast.classList.remove("show");
-
-        }, 2200);
-
+    window.__shopToastTimer = setTimeout(() => {
+        toast.style.opacity = "0";
+    }, 2200);
 }
 
 
-/* =========================================
-   SERVICE WORKER
-========================================= */
+// ================================
+// Добавление товара
+// ================================
 
-function registerServiceWorker() {
+function addToCart(productId) {
 
-    if (
-        "serviceWorker" in navigator
-    ) {
+    const success = addProductToCart(productId);
 
-        window.addEventListener(
-            "load",
-            () => {
-
-                navigator.serviceWorker
-                    .register("./sw.js")
-                    .catch(
-                        error =>
-                            console.log(
-                                "SW error:",
-                                error
-                            )
-                    );
-
-            }
-        );
-
+    if (!success) {
+        showToast("Не удалось добавить товар");
+        return;
     }
 
+    updateCartUI();
+
+    showToast("Товар добавлен в корзину");
+
+    if (typeof renderCart === "function") {
+        renderCart();
+    }
 }
 
 
-/* =========================================
-   START
-========================================= */
+// ================================
+// Избранное
+// ================================
 
-init();
+function toggleFavorite(productId) {
+
+    const isFavorite = toggleProductFavorite(productId);
+
+    if (isFavorite) {
+        showToast("Добавлено в избранное");
+    } else {
+        showToast("Удалено из избранного");
+    }
+
+    if (typeof renderFavorites === "function") {
+        renderFavorites();
+    }
+
+    if (typeof renderProducts === "function") {
+        renderProducts();
+    }
+}
+
+
+// ================================
+// Запуск приложения
+// ================================
+
+window.SHOHIN = {
+    products: getProducts,
+    cart: getCart,
+    favorites: getFavorites,
+    orders: getOrders,
+
+    addToCart,
+    toggleFavorite,
+
+    openPage,
+    refreshShopUI,
+    updateCartUI,
+
+    getDeliveryLocation,
+    setDeliveryLocation
+};
