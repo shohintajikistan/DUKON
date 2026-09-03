@@ -1,3 +1,134 @@
-{
-  "products": []
-}
+[
+  {
+    "id": 1,
+    "name": "Помидоры",
+    "category": "Овощи",
+    "price": 12,
+    "unit": "1 кг",
+    "image": "🍅",
+    "badge": "СВЕЖЕЕ",
+    "available": true,
+    "description": "Свежие помидоры"
+  },
+  {
+    "id": 2,
+    "name": "Огурцы",
+    "category": "Овощи",
+    "price": 10,
+    "unit": "1 кг",
+    "image": "🥒",
+    "badge": "",
+    "available": true,
+    "description": "Свежие огурцы"
+  },
+  {
+    "id": 3,
+    "name": "Яблоки",
+    "category": "Фрукты",
+    "price": 14,
+    "unit": "1 кг",
+    "image": "🍎",
+    "badge": "ХИТ",
+    "available": true,
+    "description": "Сочные свежие яблоки"
+  },
+  {
+    "id": 4,
+    "name": "Бананы",
+    "category": "Фрукты",
+    "price": 16,
+    "unit": "1 кг",
+    "image": "🍌",
+    "badge": "",
+    "available": true,
+    "description": "Спелые бананы"
+  },
+  {
+    "id": 5,
+    "name": "Молоко",
+    "category": "Молочное",
+    "price": 9,
+    "unit": "1 л",
+    "image": "🥛",
+    "badge": "",
+    "available": true,
+    "description": "Молоко"
+  },
+  {
+    "id": 6,
+    "name": "Йогурт",
+    "category": "Молочное",
+    "price": 11,
+    "unit": "450 г",
+    "image": "🥛",
+    "badge": "",
+    "available": true,
+    "description": "Натуральный йогурт"
+  },
+  {
+    "id": 7,
+    "name": "Куриное филе",
+    "category": "Мясо",
+    "price": 38,
+    "unit": "1 кг",
+    "image": "🍗",
+    "badge": "",
+    "available": true,
+    "description": "Свежое куриное филе"
+  },
+  {
+    "id": 8,
+    "name": "Говядина",
+    "category": "Мясо",
+    "price": 65,
+    "unit": "1 кг",
+    "image": "🥩",
+    "badge": "",
+    "available": true,
+    "description": "Свежая говядина"
+  },
+  {
+    "id": 9,
+    "name": "Сок апельсиновый",
+    "category": "Напитки",
+    "price": 15,
+    "unit": "1 л",
+    "image": "🧃",
+    "badge": "",
+    "available": true,
+    "description": "Апельсиновый сок"
+  },
+  {
+    "id": 10,
+    "name": "Минеральная вода",
+    "category": "Напитки",
+    "price": 5,
+    "unit": "1.5 л",
+    "image": "💧",
+    "badge": "",
+    "available": true,
+    "description": "Питьевая минеральная вода"
+  },
+  {
+    "id": 11,
+    "name": "Рис",
+    "category": "Бакалея",
+    "price": 13,
+    "unit": "1 кг",
+    "image": "🍚",
+    "badge": "",
+    "available": true,
+    "description": "Рис"
+  },
+  {
+    "id": 12,
+    "name": "Макароны",
+    "category": "Бакалея",
+    "price": 8,
+    "unit": "500 г",
+    "image": "🍝",
+    "badge": "",
+    "available": true,
+    "description": "Макаронные изделия"
+  }
+]
