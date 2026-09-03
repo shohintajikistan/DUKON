@@ -1,787 +1,1296 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-
     <meta charset="UTF-8">
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-    <meta
-        name="theme-color"
-        content="#092f24"
-    >
-
+    <meta name="theme-color" content="#092f24">
     <meta
         name="description"
         content="SHOHIN MARKET — онлайн-магазин продуктов с доставкой."
     >
 
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta
-        name="mobile-web-app-capable"
-        content="yes"
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
     >
 
-    <meta
-        name="apple-mobile-web-app-capable"
-        content="yes"
-    >
+    <link rel="manifest" href="manifest.json">
 
-    <link
-        rel="manifest"
-        href="manifest.json"
-    >
-
-    <link
-        rel="stylesheet"
-        href="css/style.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="css/components.css"
-    >
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
 
     <title>SHOHIN MARKET</title>
-
 </head>
-
 
 <body>
 
-<div id="app">
+<div class="app" id="app">
 
-
-    <!-- =====================================
+    <!-- =====================================================
          HEADER
-    ====================================== -->
+    ====================================================== -->
 
-    <header class="app-header">
+    <header class="header">
 
-        <div class="brand">
+        <div class="header-row">
 
-            <div class="brand-logo">
-                SH
+            <div class="brand">
+
+                <div class="logo">
+                    SH
+                </div>
+
+                <div>
+
+                    <div class="brand-name">
+                        SHOHIN MARKET
+                    </div>
+
+                    <div class="brand-sub">
+                        ПРОДУКТЫ • ДОМ • ДОСТАВКА
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="brand-name">
-                SHOHIN MARKET
+
+            <div class="header-icons">
+
+                <button
+                    class="icon-btn"
+                    type="button"
+                    onclick="SHOHIN.openPage('favorites')"
+                    aria-label="Избранное"
+                >
+                    ♡
+                </button>
+
+                <button
+                    class="icon-btn"
+                    type="button"
+                    onclick="SHOHIN.openPage('cart')"
+                    aria-label="Корзина"
+                >
+                    🛒
+
+                    <span
+                        id="headerCartCount"
+                        style="
+                            display:none;
+                            position:absolute;
+                        "
+                    >
+                        0
+                    </span>
+                </button>
+
             </div>
 
         </div>
 
 
-        <button
-            class="header-icon"
-            id="headerFavorites"
-            type="button"
-            onclick="SHOHIN.openPage('favorites')"
-            aria-label="Избранное"
-        >
-            ♡
-        </button>
+        <!-- SEARCH -->
 
+        <div class="search-wrap">
 
-        <button
-            class="header-icon"
-            id="headerCart"
-            type="button"
-            onclick="SHOHIN.openPage('cart')"
-            aria-label="Корзина"
-        >
-            🛒
-
-            <span
-                id="cartCount"
-                class="cart-count"
-                style="display:none"
-            >
-                0
+            <span class="search-icon">
+                ⌕
             </span>
 
-        </button>
+            <input
+                id="search"
+                class="search"
+                type="search"
+                placeholder="Найти продукты..."
+                autocomplete="off"
+                oninput="searchProducts()"
+            >
+
+            <button
+                id="clearSearch"
+                class="clear-search"
+                type="button"
+                onclick="clearSearch()"
+                aria-label="Очистить поиск"
+            >
+                ×
+            </button>
+
+        </div>
 
     </header>
 
 
-    <!-- =====================================
-         MAIN
-    ====================================== -->
+    <!-- =====================================================
+         HOME
+    ====================================================== -->
 
-    <main id="app-content">
+    <section
+        id="home"
+        class="page active"
+    >
 
+        <!-- HERO -->
 
-        <!-- =================================
-             HOME
-        ================================== -->
+        <div class="hero">
 
-        <section
-            id="home"
-            class="page active"
-        >
-
-            <div class="hero">
-
-                <div class="hero-content">
-
-                    <span class="hero-label">
-                        SHOHIN MARKET
-                    </span>
-
-                    <h1>
-                        Продукты рядом с вами
-                    </h1>
-
-                    <p>
-                        Заказывайте продукты удобно
-                        и быстро.
-                    </p>
-
-                </div>
-
+            <div class="hero-small">
+                SHOHIN MARKET
             </div>
 
+            <h1>
+                Свежие продукты<br>
+                рядом с вами.
+            </h1>
 
-            <!-- SEARCH -->
+            <p>
+                Выбирайте продукты, оформляйте заказ
+                и получайте доставку прямо к двери.
+            </p>
 
-            <div class="search-box">
+            <button
+                class="hero-button"
+                type="button"
+                onclick="scrollToProducts()"
+            >
+                Смотреть товары →
+            </button>
 
-                <input
-                    id="searchInput"
-                    type="search"
-                    placeholder="Поиск продуктов..."
-                    autocomplete="off"
-                >
-
-                <button
-                    type="button"
-                    onclick="performSearch()"
-                >
-                    🔍
-                </button>
-
-            </div>
-
-
-            <!-- CATEGORIES -->
-
-            <div class="section-header">
-
-                <h2>
-                    Категории
-                </h2>
-
-            </div>
+        </div>
 
 
-            <div
-                id="categories"
-                class="categories"
+        <!-- CATEGORIES -->
+
+        <div class="section-head">
+
+            <h2>
+                Категории
+            </h2>
+
+            <button
+                class="see-all"
+                type="button"
+                onclick="showAllProducts()"
+            >
+                Все товары
+            </button>
+
+        </div>
+
+
+        <div class="categories">
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Овощи')"
             >
 
-                <button
-                    type="button"
-                    onclick="showCategory('Овощи')"
-                >
-                    🥬
-                    <span>Овощи</span>
-                </button>
+                <div class="category-icon">
+                    🥦
+                </div>
 
-                <button
-                    type="button"
-                    onclick="showCategory('Фрукты')"
-                >
+                <div class="category-name">
+                    Овощи
+                </div>
+
+            </button>
+
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Фрукты')"
+            >
+
+                <div class="category-icon">
                     🍎
-                    <span>Фрукты</span>
-                </button>
+                </div>
 
-                <button
-                    type="button"
-                    onclick="showCategory('Молочное')"
-                >
+                <div class="category-name">
+                    Фрукты
+                </div>
+
+            </button>
+
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Молочное')"
+            >
+
+                <div class="category-icon">
                     🥛
-                    <span>Молочное</span>
-                </button>
+                </div>
 
-                <button
-                    type="button"
-                    onclick="showCategory('Мясо')"
-                >
-                    🍗
-                    <span>Мясо</span>
-                </button>
+                <div class="category-name">
+                    Молочное
+                </div>
 
-                <button
-                    type="button"
-                    onclick="showCategory('Напитки')"
-                >
+            </button>
+
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Мясо')"
+            >
+
+                <div class="category-icon">
+                    🥩
+                </div>
+
+                <div class="category-name">
+                    Мясо
+                </div>
+
+            </button>
+
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Напитки')"
+            >
+
+                <div class="category-icon">
                     🧃
-                    <span>Напитки</span>
-                </button>
+                </div>
 
-                <button
-                    type="button"
-                    onclick="showCategory('Бакалея')"
-                >
+                <div class="category-name">
+                    Напитки
+                </div>
+
+            </button>
+
+
+            <button
+                class="category"
+                type="button"
+                onclick="filterCategory('Бакалея')"
+            >
+
+                <div class="category-icon">
                     🍚
-                    <span>Бакалея</span>
-                </button>
+                </div>
 
+                <div class="category-name">
+                    Бакалея
+                </div>
+
+            </button>
+
+        </div>
+
+
+        <!-- PRODUCTS -->
+
+        <div
+            class="section-head"
+            id="productsTitle"
+        >
+
+            <h2>
+                Популярные товары
+            </h2>
+
+            <button
+                class="see-all"
+                type="button"
+                onclick="showAllProducts()"
+            >
+                Все
+            </button>
+
+        </div>
+
+
+        <div
+            id="products"
+            class="products"
+        >
+
+            <div class="loading">
+                Загрузка товаров...
             </div>
 
+        </div>
 
-            <!-- PRODUCTS -->
 
-            <div class="section-header">
+        <!-- NO RESULTS -->
 
-                <h2>
+        <div
+            id="noResults"
+            class="no-results"
+        >
+
+            <div style="font-size:45px">
+                🔎
+            </div>
+
+            <h3>
+                Ничего не найдено
+            </h3>
+
+            <p>
+                Попробуйте другое название товара.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FAVORITES
+    ====================================================== -->
+
+    <section
+        id="favorites"
+        class="page"
+    >
+
+        <div class="section-head">
+
+            <h2>
+                ❤️ Избранное
+            </h2>
+
+        </div>
+
+
+        <div
+            id="favoritesProducts"
+            class="products"
+        >
+        </div>
+
+
+        <div
+            id="emptyFavorites"
+            class="empty"
+        >
+
+            <div class="empty-icon">
+                ♡
+            </div>
+
+            <h3>
+                Здесь пока пусто
+            </h3>
+
+            <p>
+                Добавляйте понравившиеся товары
+                в избранное.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         CART
+    ====================================================== -->
+
+    <section
+        id="cart"
+        class="page"
+    >
+
+        <div class="section-head">
+
+            <h2>
+                🛒 Корзина
+            </h2>
+
+        </div>
+
+
+        <div id="cartItems">
+        </div>
+
+
+        <div
+            id="emptyCart"
+            class="empty"
+        >
+
+            <div class="empty-icon">
+                🛒
+            </div>
+
+            <h3>
+                Корзина пуста
+            </h3>
+
+            <p>
+                Добавьте продукты,
+                которые хотите заказать.
+            </p>
+
+            <button
+                class="hero-button"
+                type="button"
+                onclick="SHOHIN.openPage('home')"
+            >
+                Перейти к товарам
+            </button>
+
+        </div>
+
+
+        <!-- CART SUMMARY -->
+
+        <div
+            id="cartSummary"
+            class="summary"
+            style="display:none"
+        >
+
+            <div class="summary-row">
+
+                <span>
                     Товары
-                </h2>
+                </span>
 
-                <button
-                    type="button"
-                    onclick="showAllProducts()"
-                >
-                    Все
-                </button>
+                <strong id="subtotal">
+                    0 сомони
+                </strong>
 
             </div>
 
 
-            <div
-                id="products"
-                class="products-grid"
+            <div class="summary-row">
+
+                <span>
+                    Доставка
+                </span>
+
+                <strong id="delivery">
+                    Бесплатно
+                </strong>
+
+            </div>
+
+
+            <div class="summary-row summary-total">
+
+                <span>
+                    Итого
+                </span>
+
+                <strong id="total">
+                    0 сомони
+                </strong>
+
+            </div>
+
+
+            <button
+                class="primary-btn"
+                type="button"
+                onclick="openCheckout()"
             >
+                Оформить заказ →
+            </button>
 
-                <div class="loading">
-                    Загрузка товаров...
-                </div>
+        </div>
 
-            </div>
-
-        </section>
+    </section>
 
 
-        <!-- =================================
-             FAVORITES
-        ================================== -->
+    <!-- =====================================================
+         CHECKOUT
+    ====================================================== -->
 
-        <section
-            id="favorites"
-            class="page"
+    <section
+        id="checkout"
+        class="page"
+    >
+
+        <button
+            class="back"
+            type="button"
+            onclick="SHOHIN.openPage('cart')"
         >
-
-            <div class="page-title">
-
-                <h1>
-                    Избранное
-                </h1>
-
-                <p>
-                    Ваши любимые товары
-                </p>
-
-            </div>
+            ← Назад в корзину
+        </button>
 
 
-            <div
-                id="favoritesList"
-                class="products-grid"
-            >
+        <div class="section-head">
 
-                <div class="empty-state">
-                    В избранном пока ничего нет.
-                </div>
+            <h2>
+                Оформление заказа
+            </h2>
 
-            </div>
-
-        </section>
+        </div>
 
 
-        <!-- =================================
-             CART
-        ================================== -->
+        <!-- CUSTOMER -->
 
-        <section
-            id="cart"
-            class="page"
-        >
+        <div class="form-card">
 
-            <div class="page-title">
-
-                <h1>
-                    Корзина
-                </h1>
-
-                <p>
-                    Проверьте товары перед заказом
-                </p>
-
-            </div>
+            <h3>
+                👤 Ваши данные
+            </h3>
 
 
-            <div
-                id="cartList"
-                class="cart-list"
-            >
-
-                <div class="empty-state">
-                    Корзина пуста.
-                </div>
-
-            </div>
-
-
-            <div
-                id="cartSummary"
-                class="cart-summary"
-            >
-
-                <div>
-                    <span>
-                        Итого
-                    </span>
-
-                    <strong id="cartTotal">
-                        0 с.
-                    </strong>
-                </div>
-
-
-                <button
-                    type="button"
-                    onclick="openCheckout()"
-                >
-                    Оформить заказ
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================
-             CHECKOUT
-        ================================== -->
-
-        <section
-            id="checkout"
-            class="page"
-        >
-
-            <div class="page-title">
-
-                <h1>
-                    Оформление заказа
-                </h1>
-
-                <p>
-                    Укажите данные для доставки
-                </p>
-
-            </div>
-
-
-            <form
-                id="checkoutForm"
-                onsubmit="submitOrder(event)"
-            >
+            <div class="field">
 
                 <label>
-                    Ваше имя
-
-                    <input
-                        id="customerName"
-                        type="text"
-                        required
-                        autocomplete="name"
-                        placeholder="Введите имя"
-                    >
-
+                    Имя
                 </label>
 
+                <input
+                    id="customerName"
+                    type="text"
+                    autocomplete="name"
+                    placeholder="Например: Искандар"
+                >
+
+            </div>
+
+
+            <div class="field">
 
                 <label>
                     Телефон
-
-                    <input
-                        id="customerPhone"
-                        type="tel"
-                        required
-                        autocomplete="tel"
-                        placeholder="+992 ..."
-                    >
-
                 </label>
 
+                <input
+                    id="customerPhone"
+                    type="tel"
+                    autocomplete="tel"
+                    placeholder="+992 XX XXX XX XX"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- DELIVERY -->
+
+        <div class="form-card">
+
+            <h3>
+                📍 Доставка
+            </h3>
+
+
+            <div class="field">
 
                 <label>
                     Адрес доставки
-
-                    <textarea
-                        id="deliveryAddress"
-                        required
-                        placeholder="Введите адрес"
-                    ></textarea>
-
                 </label>
 
-
-                <button
-                    type="button"
-                    onclick="openDeliveryMap()"
+                <input
+                    id="address"
+                    type="text"
+                    placeholder="Улица, дом, квартира"
                 >
-                    📍 Выбрать адрес на карте
-                </button>
-
-
-                <label>
-                    Комментарий
-
-                    <textarea
-                        id="orderComment"
-                        placeholder="Комментарий к заказу"
-                    ></textarea>
-
-                </label>
-
-
-                <div class="payment-options">
-
-                    <label>
-                        <input
-                            type="radio"
-                            name="payment"
-                            value="cash"
-                            checked
-                        >
-                        Наличными
-                    </label>
-
-
-                    <label>
-                        <input
-                            type="radio"
-                            name="payment"
-                            value="card"
-                        >
-                        Картой
-                    </label>
-
-                </div>
-
-
-                <div id="checkoutTotal">
-                    Итого: 0 с.
-                </div>
-
-
-                <button
-                    type="submit"
-                >
-                    Подтвердить заказ
-                </button>
-
-            </form>
-
-        </section>
-
-
-        <!-- =================================
-             ORDERS
-        ================================== -->
-
-        <section
-            id="orders"
-            class="page"
-        >
-
-            <div class="page-title">
-
-                <h1>
-                    Мои заказы
-                </h1>
-
-                <p>
-                    История ваших заказов
-                </p>
 
             </div>
+
+
+            <!-- MAP PREVIEW -->
+
+            <div
+                class="map"
+                onclick="selectMapPoint()"
+            >
+
+                <div class="map-pin">
+                </div>
+
+                <div class="map-label">
+                    📍 Нажмите, чтобы выбрать точку
+                </div>
+
+            </div>
+
+
+            <button
+                class="primary-btn"
+                type="button"
+                style="
+                    background:var(--green);
+                    color:white;
+                "
+                onclick="selectMapPoint()"
+            >
+                📍 Выбрать точку на карте
+            </button>
 
 
             <div
-                id="ordersList"
-                class="orders-list"
+                class="field"
+                style="margin-top:14px"
             >
 
-                <div class="empty-state">
-                    Заказов пока нет.
+                <label>
+                    Комментарий курьеру
+                </label>
+
+                <textarea
+                    id="comment"
+                    placeholder="Например: позвонить перед приездом..."
+                ></textarea>
+
+            </div>
+
+        </div>
+
+
+        <!-- PAYMENT -->
+
+        <div class="form-card">
+
+            <h3>
+                💳 Оплата
+            </h3>
+
+
+            <div class="field">
+
+                <select id="payment">
+
+                    <option value="cash">
+                        Наличными при получении
+                    </option>
+
+                    <option value="card">
+                        Картой курьеру
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- CHECKOUT SUMMARY -->
+
+        <div class="summary">
+
+            <div class="summary-row">
+
+                <span>
+                    Сумма товаров
+                </span>
+
+                <strong id="checkoutSubtotal">
+                    0 сомони
+                </strong>
+
+            </div>
+
+
+            <div class="summary-row">
+
+                <span>
+                    Доставка
+                </span>
+
+                <strong>
+                    Бесплатно
+                </strong>
+
+            </div>
+
+
+            <div class="summary-row summary-total">
+
+                <span>
+                    К оплате
+                </span>
+
+                <strong id="checkoutTotal">
+                    0 сомони
+                </strong>
+
+            </div>
+
+
+            <button
+                class="primary-btn"
+                type="button"
+                onclick="placeOrder()"
+            >
+                Подтвердить заказ ✓
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ORDERS
+    ====================================================== -->
+
+    <section
+        id="orders"
+        class="page"
+    >
+
+        <div class="section-head">
+
+            <h2>
+                📦 Мои заказы
+            </h2>
+
+        </div>
+
+
+        <div id="ordersList">
+        </div>
+
+
+        <div
+            id="emptyOrders"
+            class="empty"
+        >
+
+            <div class="empty-icon">
+                📦
+            </div>
+
+            <h3>
+                Заказов пока нет
+            </h3>
+
+            <p>
+                Ваши заказы появятся здесь.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         CONTACTS
+    ====================================================== -->
+
+    <section
+        id="contacts"
+        class="page"
+    >
+
+        <div class="section-head">
+
+            <h2>
+                📱 Наши контакты
+            </h2>
+
+        </div>
+
+
+        <div
+            class="info-card"
+            onclick="openWhatsApp()"
+        >
+
+            <div class="info-row">
+
+                <div class="info-icon">
+                    💬
+                </div>
+
+                <div>
+
+                    <div class="info-title">
+                        WhatsApp
+                    </div>
+
+                    <div class="info-text">
+                        Напишите нам по вопросам заказа.
+                    </div>
+
                 </div>
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =================================
-             CONTACTS
-        ================================== -->
+        <div class="info-card">
 
-        <section
-            id="contacts"
-            class="page"
-        >
+            <div class="info-row">
 
-            <div class="page-title">
+                <div class="info-icon">
+                    📍
+                </div>
 
-                <h1>
-                    Контакты
-                </h1>
+                <div>
 
-                <p>
-                    SHOHIN MARKET
-                </p>
+                    <div class="info-title">
+                        Зона доставки
+                    </div>
 
-            </div>
+                    <div class="info-text">
+                        Доставка осуществляется
+                        в выбранные зоны.
+                    </div>
 
-
-            <div class="info-card">
-
-                <h3>
-                    Свяжитесь с нами
-                </h3>
-
-                <p>
-                    По вопросам заказа и доставки
-                    свяжитесь с магазином.
-                </p>
-
-                <button
-                    type="button"
-                    onclick="openWhatsApp()"
-                >
-                    WhatsApp
-                </button>
+                </div>
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =================================
-             ABOUT
-        ================================== -->
+        <div class="info-card">
 
-        <section
-            id="about"
-            class="page"
-        >
+            <div class="info-row">
 
-            <div class="page-title">
+                <div class="info-icon">
+                    🕘
+                </div>
 
-                <h1>
-                    О SHOHIN MARKET
-                </h1>
+                <div>
 
-            </div>
+                    <div class="info-title">
+                        Время работы
+                    </div>
 
+                    <div class="info-text">
+                        Каждый день • 08:00 — 22:00
+                    </div>
 
-            <div class="info-card">
-
-                <p>
-                    SHOHIN MARKET — онлайн-магазин
-                    продуктов с удобным заказом
-                    и доставкой.
-                </p>
+                </div>
 
             </div>
 
-        </section>
+        </div>
+
+    </section>
 
 
-        <!-- =================================
-             POLICY
-        ================================== -->
+    <!-- =====================================================
+         ABOUT
+    ====================================================== -->
 
-        <section
-            id="policy"
-            class="page"
-        >
+    <section
+        id="about"
+        class="page"
+    >
 
-            <div class="page-title">
+        <div class="section-head">
 
-                <h1>
-                    Политика
-                </h1>
+            <h2>
+                ℹ️ О SHOHIN MARKET
+            </h2>
 
-            </div>
-
-
-            <div class="info-card">
-
-                <p>
-                    Здесь будет размещена
-                    политика магазина.
-                </p>
-
-            </div>
-
-        </section>
-
-    </main>
+        </div>
 
 
-    <!-- =====================================
+        <div class="info-card">
+
+            <h3 style="margin-top:0">
+                SHOHIN MARKET
+            </h3>
+
+            <p
+                style="
+                    font-size:13px;
+                    line-height:1.7;
+                    color:var(--muted);
+                "
+            >
+                Современный онлайн-магазин продуктов
+                с удобной доставкой. Мы создаём простой
+                и приятный способ покупать продукты
+                каждый день.
+            </p>
+
+
+            <p
+                style="
+                    font-size:13px;
+                    line-height:1.7;
+                    color:var(--muted);
+                "
+            >
+                Наша цель — сделать заказ продуктов
+                быстрым, понятным и удобным с телефона.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         POLICY
+    ====================================================== -->
+
+    <section
+        id="policy"
+        class="page"
+    >
+
+        <div class="section-head">
+
+            <h2>
+                📜 Политика использования
+            </h2>
+
+        </div>
+
+
+        <div class="info-card">
+
+            <h3 style="margin-top:0">
+                Использование приложения
+            </h3>
+
+            <p
+                class="info-text"
+                style="font-size:12px"
+            >
+                Пользователь самостоятельно проверяет
+                правильность указанного адреса,
+                номера телефона и состава заказа.
+            </p>
+
+
+            <h3>
+                Доставка
+            </h3>
+
+            <p
+                class="info-text"
+                style="font-size:12px"
+            >
+                Срок доставки зависит от зоны доставки,
+                загруженности магазина и наличия товаров.
+            </p>
+
+
+            <h3>
+                Заказы
+            </h3>
+
+            <p
+                class="info-text"
+                style="font-size:12px"
+            >
+                После оформления заказа пользователь
+                может отслеживать его статус.
+            </p>
+
+
+            <h3>
+                Персональные данные
+            </h3>
+
+            <p
+                class="info-text"
+                style="font-size:12px"
+            >
+                В рабочей версии приложения данные должны
+                обрабатываться в соответствии с применимым
+                законодательством и политикой
+                конфиденциальности.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
          BOTTOM NAVIGATION
-    ====================================== -->
+    ====================================================== -->
 
-    <nav class="bottom-nav">
+    <nav class="bottom">
 
         <button
+            class="nav-btn active"
             type="button"
             onclick="SHOHIN.openPage('home')"
         >
-            🏠
-            <span>Главная</span>
+
+            <div class="nav-icon">
+                ⌂
+            </div>
+
+            Главная
+
         </button>
 
 
         <button
+            class="nav-btn"
             type="button"
             onclick="SHOHIN.openPage('favorites')"
         >
-            ♡
-            <span>Избранное</span>
+
+            <div class="nav-icon">
+                ♡
+            </div>
+
+            Товары
+
         </button>
 
 
         <button
+            id="shButton"
+            class="sh-btn"
             type="button"
-            class="sh-button"
-            onclick="toggleSHMenu()"
+            onclick="toggleSH()"
+            aria-label="SHOHIN Menu"
         >
             SH
         </button>
 
 
         <button
+            class="nav-btn"
             type="button"
             onclick="SHOHIN.openPage('cart')"
         >
-            🛒
-            <span>Корзина</span>
+
+            <div class="nav-icon">
+                🛒
+            </div>
+
+            Корзина
+
         </button>
 
 
         <button
+            class="nav-btn"
             type="button"
             onclick="SHOHIN.openPage('orders')"
         >
-            📦
-            <span>Заказы</span>
+
+            <div class="nav-icon">
+                📦
+            </div>
+
+            Заказы
+
         </button>
 
     </nav>
 
 
-    <!-- =====================================
+    <!-- =====================================================
          SH MENU
-    ====================================== -->
+    ====================================================== -->
 
     <div
         id="shMenu"
         class="sh-menu"
-        hidden
     >
 
-        <button
-            type="button"
-            onclick="SHOHIN.openPage('contacts'); toggleSHMenu()"
+        <div
+            style="
+                color:var(--lime);
+                font-size:11px;
+                font-weight:900;
+                margin:2px 4px 12px;
+                letter-spacing:1px;
+            "
         >
-            📞 Контакты
-        </button>
+            SHOHIN MENU
+        </div>
 
 
-        <button
-            type="button"
-            onclick="SHOHIN.openPage('about'); toggleSHMenu()"
-        >
-            ℹ️ О магазине
-        </button>
+        <div class="menu-grid">
 
-
-        <button
-            type="button"
-            onclick="SHOHIN.openPage('policy'); toggleSHMenu()"
-        >
-            📄 Политика
-        </button>
-
-    </div>
-
-
-    <!-- =====================================
-         MAP MODAL
-    ====================================== -->
-
-    <div
-        id="mapModal"
-        class="modal"
-        hidden
-    >
-
-        <div class="modal-content">
-
-            <div class="modal-header">
-
-                <h2>
-                    Адрес доставки
-                </h2>
-
-                <button
-                    type="button"
-                    onclick="closeDeliveryMap()"
-                >
-                    ✕
-                </button>
-
-            </div>
-
-
-            <div
-                id="mapContainer"
-                class="map-container"
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('home')"
             >
 
-                <div class="map-placeholder">
-
-                    📍
-
-                    <p>
-                        Карта будет подключена
-                        на следующем этапе.
-                    </p>
-
+                <div class="menu-item-icon">
+                    ⌂
                 </div>
 
-            </div>
+                Главная
 
-
-            <input
-                id="mapAddress"
-                type="text"
-                placeholder="Адрес"
-            >
+            </button>
 
 
             <button
+                class="menu-item"
                 type="button"
-                onclick="confirmDeliveryLocation()"
+                onclick="menuOpen('home')"
             >
-                Подтвердить адрес
+
+                <div class="menu-item-icon">
+                    ▦
+                </div>
+
+                Категории
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('favorites')"
+            >
+
+                <div class="menu-item-icon">
+                    ♡
+                </div>
+
+                Товары ❤️
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('cart')"
+            >
+
+                <div class="menu-item-icon">
+                    🛒
+                </div>
+
+                Корзина
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('orders')"
+            >
+
+                <div class="menu-item-icon">
+                    📦
+                </div>
+
+                Заказы
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('contacts')"
+            >
+
+                <div class="menu-item-icon">
+                    💬
+                </div>
+
+                WhatsApp
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="shareApp()"
+            >
+
+                <div class="menu-item-icon">
+                    ↗
+                </div>
+
+                Поделиться
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('about')"
+            >
+
+                <div class="menu-item-icon">
+                    ℹ
+                </div>
+
+                О магазине
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="menuOpen('policy')"
+            >
+
+                <div class="menu-item-icon">
+                    📜
+                </div>
+
+                Политика
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="repeatLastOrder()"
+            >
+
+                <div class="menu-item-icon">
+                    ↻
+                </div>
+
+                Повторить заказ
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="showHelp()"
+            >
+
+                <div class="menu-item-icon">
+                    ?
+                </div>
+
+                Помощь
+
+            </button>
+
+
+            <button
+                class="menu-item"
+                type="button"
+                onclick="rateShop()"
+            >
+
+                <div class="menu-item-icon">
+                    ★
+                </div>
+
+                Оценить
+
             </button>
 
         </div>
@@ -789,164 +1298,345 @@
     </div>
 
 
-    <!-- =====================================
+    <!-- =====================================================
          TOAST
-    ====================================== -->
+    ====================================================== -->
 
     <div
-        id="shopToast"
+        id="toast"
         class="toast"
-        hidden
-    ></div>
+    >
+    </div>
 
+
+    <!-- =====================================================
+         MAP MODAL
+    ====================================================== -->
+
+    <div
+        id="mapModal"
+        class="modal"
+    >
+
+        <div class="modal-box">
+
+            <div class="modal-head">
+
+                <h2>
+                    📍 Точка доставки
+                </h2>
+
+                <button
+                    class="close"
+                    type="button"
+                    onclick="closeMap()"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                id="deliveryMap"
+                class="map"
+                style="height:300px"
+                onclick="moveMapPin(event)"
+            >
+
+                <div
+                    id="modalPin"
+                    class="map-pin"
+                >
+                </div>
+
+                <div class="map-label">
+                    Нажмите на карту
+                </div>
+
+            </div>
+
+
+            <button
+                class="primary-btn"
+                type="button"
+                style="
+                    background:var(--green);
+                    color:white;
+                "
+                onclick="confirmMap()"
+            >
+                Подтвердить точку
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 
 
-<!-- =====================================
-     APPLICATION
-====================================== -->
+<!-- =========================================================
+     COMPATIBILITY BRIDGE
+     Новая архитектура остаётся в js/*.js.
+========================================================== -->
 
-<script
-    type="module"
-    src="js/app.js"
-></script>
+<script type="module">
+
+import {
+    loadProducts
+} from "./js/products.js";
+
+import {
+    addProductToCart,
+    increaseCartQuantity,
+    decreaseCartQuantity,
+    removeProductFromCart,
+    clearCart
+} from "./js/cart.js";
+
+import {
+    toggleProductFavorite
+} from "./js/favorites.js";
+
+import {
+    createOrder,
+    repeatLastOrder as repeatLastOrderModule
+} from "./js/orders.js";
+
+import {
+    getDeliveryLocation,
+    setDeliveryAddress
+} from "./js/map.js";
 
 
-<!-- =====================================
-     UI HELPERS
-====================================== -->
+/* =========================================================
+   INITIALIZATION
+========================================================= */
 
-<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
 
-function performSearch() {
+        try {
 
-    const input =
-        document.getElementById(
-            "searchInput"
-        );
+            await loadProducts();
 
-    const query =
-        input
-            ? input.value.trim()
-            : "";
+            if (
+                typeof window.renderProducts ===
+                "function"
+            ) {
+                window.renderProducts();
+            }
 
-    if (
-        window.SHOHIN &&
-        typeof window.SHOHIN.search === "function"
-    ) {
+            if (
+                typeof window.renderFavorites ===
+                "function"
+            ) {
+                window.renderFavorites();
+            }
 
-        window.SHOHIN.search(query);
+            if (
+                typeof window.renderCart ===
+                "function"
+            ) {
+                window.renderCart();
+            }
+
+            if (
+                typeof window.renderOrders ===
+                "function"
+            ) {
+                window.renderOrders();
+            }
+
+            if (
+                typeof window.updateCartUI ===
+                "function"
+            ) {
+                window.updateCartUI();
+            }
+
+        } catch (error) {
+
+            console.error(
+                "SHOHIN MARKET initialization error:",
+                error
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   LEGACY UI → NEW ARCHITECTURE BRIDGE
+========================================================= */
+
+window.addToCart = function(id) {
+
+    const result =
+        addProductToCart(id, 1);
+
+    if (result) {
+
+        if (
+            typeof window.renderCart ===
+            "function"
+        ) {
+            window.renderCart();
+        }
+
+        if (
+            typeof window.updateCartUI ===
+            "function"
+        ) {
+            window.updateCartUI();
+        }
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+            window.SHOHIN.showToast(
+                "Товар добавлен в корзину 🛒"
+            );
+        }
+
+    }
+
+};
+
+
+window.changeQty = function(
+    id,
+    amount
+) {
+
+    if (amount > 0) {
+
+        increaseCartQuantity(id);
 
     } else {
 
-        window.dispatchEvent(
-            new CustomEvent(
-                "shohin-search",
-                {
-                    detail: query
-                }
-            )
-        );
+        decreaseCartQuantity(id);
+
     }
-}
-
-
-function showCategory(category) {
 
     if (
-        window.SHOHIN &&
-        typeof window.SHOHIN.category === "function"
+        typeof window.renderCart ===
+        "function"
     ) {
-
-        window.SHOHIN.category(category);
-
-    } else {
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "shohin-category",
-                {
-                    detail: category
-                }
-            )
-        );
+        window.renderCart();
     }
-}
-
-
-function showAllProducts() {
 
     if (
-        window.SHOHIN &&
-        typeof window.SHOHIN.showAll === "function"
+        typeof window.updateCartUI ===
+        "function"
     ) {
-
-        window.SHOHIN.showAll();
-
-    } else {
-
-        window.dispatchEvent(
-            new Event(
-                "shohin-show-all"
-            )
-        );
+        window.updateCartUI();
     }
-}
+
+};
 
 
-function openCheckout() {
+window.removeFromCart = function(id) {
+
+    removeProductFromCart(id);
 
     if (
-        window.SHOHIN &&
-        typeof window.SHOHIN.openCheckout === "function"
+        typeof window.renderCart ===
+        "function"
     ) {
-
-        window.SHOHIN.openCheckout();
-
-    } else {
-
-        SHOHIN.openPage("checkout");
+        window.renderCart();
     }
-}
+
+    if (
+        typeof window.updateCartUI ===
+        "function"
+    ) {
+        window.updateCartUI();
+    }
+
+};
 
 
-function submitOrder(event) {
+window.toggleFavorite = function(id) {
 
-    event.preventDefault();
+    toggleProductFavorite(id);
+
+    if (
+        typeof window.renderProducts ===
+        "function"
+    ) {
+        window.renderProducts();
+    }
+
+    if (
+        typeof window.renderFavorites ===
+        "function"
+    ) {
+        window.renderFavorites();
+    }
+
+};
+
+
+window.placeOrder = function() {
 
     const name =
-        document.getElementById(
-            "customerName"
-        ).value.trim();
+        document
+            .getElementById("customerName")
+            ?.value
+            .trim() || "";
 
     const phone =
-        document.getElementById(
-            "customerPhone"
-        ).value.trim();
+        document
+            .getElementById("customerPhone")
+            ?.value
+            .trim() || "";
 
     const address =
-        document.getElementById(
-            "deliveryAddress"
-        ).value.trim();
+        document
+            .getElementById("address")
+            ?.value
+            .trim() || "";
 
     const comment =
-        document.getElementById(
-            "orderComment"
-        ).value.trim();
+        document
+            .getElementById("comment")
+            ?.value
+            .trim() || "";
 
     const payment =
-        document.querySelector(
-            'input[name="payment"]:checked'
-        )?.value || "cash";
+        document
+            .getElementById("payment")
+            ?.value || "cash";
+
+
+    if (!name || !phone || !address) {
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+            window.SHOHIN.showToast(
+                "Заполните имя, телефон и адрес"
+            );
+        }
+
+        return;
+
+    }
 
 
     const location =
-        SHOHIN.getDeliveryLocation();
+        getDeliveryLocation();
 
 
     const order =
-        SHOHIN.createOrder({
+        createOrder({
 
             name,
             phone,
@@ -965,35 +1655,68 @@ function submitOrder(event) {
 
     if (!order) {
 
-        SHOHIN.showToast(
-            "Корзина пуста"
-        );
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+            window.SHOHIN.showToast(
+                "Корзина пуста"
+            );
+        }
 
         return;
+
     }
 
 
-    SHOHIN.showToast(
-        "Заказ успешно создан"
-    );
-
-
-    SHOHIN.openPage(
-        "orders"
-    );
+    if (
+        typeof window.SHOHIN?.showToast ===
+        "function"
+    ) {
+        window.SHOHIN.showToast(
+            "Заказ успешно оформлен ✓"
+        );
+    }
 
 
     if (
         typeof window.renderOrders ===
         "function"
     ) {
-
         window.renderOrders();
     }
-}
 
 
-function openDeliveryMap() {
+    if (
+        typeof window.updateCartUI ===
+        "function"
+    ) {
+        window.updateCartUI();
+    }
+
+
+    setTimeout(
+        () => {
+
+            if (
+                typeof window.SHOHIN?.openPage ===
+                "function"
+            ) {
+
+                window.SHOHIN.openPage(
+                    "orders"
+                );
+
+            }
+
+        },
+        500
+    );
+
+};
+
+
+window.selectMapPoint = function() {
 
     const modal =
         document.getElementById(
@@ -1001,12 +1724,15 @@ function openDeliveryMap() {
         );
 
     if (modal) {
-        modal.hidden = false;
+
+        modal.classList.add("show");
+
     }
-}
+
+};
 
 
-function closeDeliveryMap() {
+window.closeMap = function() {
 
     const modal =
         document.getElementById(
@@ -1014,72 +1740,550 @@ function closeDeliveryMap() {
         );
 
     if (modal) {
-        modal.hidden = true;
+
+        modal.classList.remove("show");
+
     }
-}
+
+};
 
 
-function confirmDeliveryLocation() {
+window.moveMapPin = function(event) {
 
-    const address =
+    const map =
+        event.currentTarget;
+
+    const rect =
+        map.getBoundingClientRect();
+
+    const x =
+        event.clientX -
+        rect.left;
+
+    const y =
+        event.clientY -
+        rect.top;
+
+    const pin =
         document.getElementById(
-            "mapAddress"
-        ).value.trim();
-
-
-    if (!address) {
-
-        SHOHIN.showToast(
-            "Введите адрес"
+            "modalPin"
         );
 
+    if (!pin) {
         return;
     }
 
+    pin.style.left =
+        x + "px";
 
-    SHOHIN.setDeliveryAddress(
-        address
+    pin.style.top =
+        y + "px";
+
+};
+
+
+window.confirmMap = function() {
+
+    setDeliveryAddress(
+        "Точка доставки выбрана на карте 📍"
     );
 
+    const address =
+        document.getElementById(
+            "address"
+        );
 
-    document.getElementById(
-        "deliveryAddress"
-    ).value = address;
+    if (address) {
+
+        address.value =
+            "Точка доставки выбрана на карте 📍";
+
+    }
+
+    closeMap();
+
+    if (
+        typeof window.SHOHIN?.showToast ===
+        "function"
+    ) {
+        window.SHOHIN.showToast(
+            "Точка доставки сохранена"
+        );
+    }
+
+};
 
 
-    closeDeliveryMap();
+window.openCheckout = function() {
+
+    if (
+        typeof window.SHOHIN?.openCheckout ===
+        "function"
+    ) {
+
+        window.SHOHIN.openCheckout();
+
+    } else {
+
+        window.SHOHIN.openPage(
+            "checkout"
+        );
+
+    }
+
+};
 
 
-    SHOHIN.showToast(
-        "Адрес выбран"
-    );
-}
+window.filterCategory = function(
+    category
+) {
+
+    if (
+        typeof window.SHOHIN?.category ===
+        "function"
+    ) {
+
+        window.SHOHIN.category(
+            category
+        );
+
+    }
+
+};
 
 
-function toggleSHMenu() {
+window.showAllProducts = function() {
+
+    if (
+        typeof window.SHOHIN?.showAll ===
+        "function"
+    ) {
+
+        window.SHOHIN.showAll();
+
+    }
+
+};
+
+
+window.searchProducts = function() {
+
+    const input =
+        document.getElementById(
+            "search"
+        );
+
+    const value =
+        input
+            ? input.value.trim()
+            : "";
+
+
+    const clearButton =
+        document.getElementById(
+            "clearSearch"
+        );
+
+
+    if (clearButton) {
+
+        clearButton.style.display =
+            value
+                ? "block"
+                : "none";
+
+    }
+
+
+    if (
+        typeof window.SHOHIN?.search ===
+        "function"
+    ) {
+
+        window.SHOHIN.search(
+            value
+        );
+
+    }
+
+};
+
+
+window.clearSearch = function() {
+
+    const input =
+        document.getElementById(
+            "search"
+        );
+
+    if (input) {
+
+        input.value = "";
+
+    }
+
+
+    const clearButton =
+        document.getElementById(
+            "clearSearch"
+        );
+
+    if (clearButton) {
+
+        clearButton.style.display =
+            "none";
+
+    }
+
+
+    if (
+        typeof window.SHOHIN?.search ===
+        "function"
+    ) {
+
+        window.SHOHIN.search("");
+
+    }
+
+};
+
+
+window.scrollToProducts = function() {
+
+    const title =
+        document.getElementById(
+            "productsTitle"
+        );
+
+    if (title) {
+
+        title.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }
+
+};
+
+
+window.toggleSH = function() {
 
     const menu =
         document.getElementById(
             "shMenu"
         );
 
-    if (!menu) {
+    const button =
+        document.getElementById(
+            "shButton"
+        );
+
+    if (!menu || !button) {
         return;
     }
 
-    menu.hidden =
-        !menu.hidden;
-}
+    const open =
+        menu.classList.toggle(
+            "open"
+        );
 
-
-function openWhatsApp() {
-
-    SHOHIN.showToast(
-        "Контакт WhatsApp будет подключён позже"
+    button.classList.toggle(
+        "open",
+        open
     );
-}
+
+};
+
+
+window.closeSH = function() {
+
+    const menu =
+        document.getElementById(
+            "shMenu"
+        );
+
+    const button =
+        document.getElementById(
+            "shButton"
+        );
+
+    if (menu) {
+
+        menu.classList.remove(
+            "open"
+        );
+
+    }
+
+    if (button) {
+
+        button.classList.remove(
+            "open"
+        );
+
+    }
+
+};
+
+
+window.menuOpen = function(page) {
+
+    if (
+        typeof window.SHOHIN?.openPage ===
+        "function"
+    ) {
+
+        window.SHOHIN.openPage(
+            page
+        );
+
+    }
+
+};
+
+
+window.shareApp = async function() {
+
+    const data = {
+
+        title:
+            "SHOHIN MARKET",
+
+        text:
+            "Попробуйте SHOHIN MARKET — онлайн-магазин продуктов с доставкой.",
+
+        url:
+            window.location.href
+
+    };
+
+
+    if (
+        navigator.share
+    ) {
+
+        try {
+
+            await navigator.share(
+                data
+            );
+
+        } catch (error) {
+
+            // Пользователь отменил
+            // окно поделиться.
+
+        }
+
+        return;
+
+    }
+
+
+    try {
+
+        await navigator.clipboard.writeText(
+            window.location.href
+        );
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+
+            window.SHOHIN.showToast(
+                "Ссылка скопирована ✓"
+            );
+
+        }
+
+    } catch (error) {
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+
+            window.SHOHIN.showToast(
+                "Поделиться пока недоступно"
+            );
+
+        }
+
+    }
+
+};
+
+
+window.repeatLastOrder = function() {
+
+    const result =
+        repeatLastOrderModule();
+
+
+    if (result) {
+
+        if (
+            typeof window.renderCart ===
+            "function"
+        ) {
+
+            window.renderCart();
+
+        }
+
+        if (
+            typeof window.updateCartUI ===
+            "function"
+        ) {
+
+            window.updateCartUI();
+
+        }
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+
+            window.SHOHIN.showToast(
+                "Товары прошлого заказа добавлены 🛒"
+            );
+
+        }
+
+        setTimeout(
+            () => {
+
+                window.SHOHIN.openPage(
+                    "cart"
+                );
+
+            },
+            400
+        );
+
+    } else {
+
+        if (
+            typeof window.SHOHIN?.showToast ===
+            "function"
+        ) {
+
+            window.SHOHIN.showToast(
+                "У вас ещё нет заказов"
+            );
+
+        }
+
+    }
+
+};
+
+
+window.showHelp = function() {
+
+    if (
+        typeof window.SHOHIN?.showToast ===
+        "function"
+    ) {
+
+        window.SHOHIN.showToast(
+            "Помощь: свяжитесь с нами через WhatsApp"
+        );
+
+    }
+
+};
+
+
+window.rateShop = function() {
+
+    if (
+        typeof window.SHOHIN?.showToast ===
+        "function"
+    ) {
+
+        window.SHOHIN.showToast(
+            "Спасибо! Оценка магазина скоро появится ⭐"
+        );
+
+    }
+
+};
+
+
+window.openWhatsApp = function() {
+
+    if (
+        typeof window.SHOHIN?.showToast ===
+        "function"
+    ) {
+
+        window.SHOHIN.showToast(
+            "Контакт WhatsApp будет подключён позже"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   Keep SHOHIN UI state synchronized
+========================================================= */
+
+window.addEventListener(
+    "shohin-page-change",
+    () => {
+
+        const pages =
+            document.querySelectorAll(
+                ".page"
+            );
+
+        pages.forEach(
+            page => {
+
+                if (
+                    page.classList.contains(
+                        "active"
+                    )
+                ) {
+
+                    page.style.animation =
+                        "none";
+
+                    requestAnimationFrame(
+                        () => {
+
+                            page.style.animation =
+                                "";
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+    }
+);
 
 </script>
+
+
+<!-- =========================================================
+     MAIN APP MODULE
+========================================================== -->
+
+<script
+    type="module"
+    src="js/app.js"
+></script>
+
 
 </body>
 </html>
