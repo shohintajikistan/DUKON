@@ -5,7 +5,7 @@ let products = [];
 
 
 // ========================================
-// Загрузка товаров
+// LOAD PRODUCTS
 // ========================================
 
 async function loadProducts() {
@@ -13,20 +13,32 @@ async function loadProducts() {
     try {
 
         const response =
-            await fetch("../data/products.json");
+            await fetch("data/products.json", {
+                cache: "no-store"
+            });
 
         if (!response.ok) {
+
             throw new Error(
-                "Не удалось загрузить products.json"
+                `HTTP ${response.status}`
             );
         }
 
-        products =
+        const data =
             await response.json();
+
+        if (!Array.isArray(data)) {
+
+            throw new Error(
+                "products.json должен содержать массив"
+            );
+        }
+
+        products = data;
 
         console.log(
             "SHOHIN MARKET: товары загружены",
-            products
+            products.length
         );
 
         return products;
@@ -46,42 +58,47 @@ async function loadProducts() {
 
 
 // ========================================
-// Получить все товары
+// GET ALL PRODUCTS
 // ========================================
 
 function getProducts() {
+
     return products;
 }
 
 
 // ========================================
-// Получить товар по ID
+// GET PRODUCT BY ID
 // ========================================
 
 function getProductById(id) {
 
     return products.find(
         product =>
-            Number(product.id) === Number(id)
+            Number(product.id) ===
+            Number(id)
     );
 }
 
 
 // ========================================
-// Получить товары категории
+// GET PRODUCTS BY CATEGORY
 // ========================================
 
 function getProductsByCategory(category) {
 
     return products.filter(
         product =>
-            product.category === category
+            String(product.category || "")
+                .toLowerCase() ===
+            String(category || "")
+                .toLowerCase()
     );
 }
 
 
 // ========================================
-// Поиск товаров
+// SEARCH PRODUCTS
 // ========================================
 
 function searchProductsData(query) {
@@ -109,17 +126,22 @@ function searchProductsData(query) {
             String(product.description || "")
                 .toLowerCase();
 
+        const unit =
+            String(product.unit || "")
+                .toLowerCase();
+
         return (
             name.includes(text) ||
             category.includes(text) ||
-            description.includes(text)
+            description.includes(text) ||
+            unit.includes(text)
         );
     });
 }
 
 
 // ========================================
-// Только доступные товары
+// AVAILABLE PRODUCTS
 // ========================================
 
 function getAvailableProducts() {
@@ -132,23 +154,48 @@ function getAvailableProducts() {
 
 
 // ========================================
-// Получить категории
+// CATEGORIES
 // ========================================
 
 function getCategories() {
 
     return [
         ...new Set(
-            products.map(
-                product => product.category
-            )
+            products
+                .map(
+                    product =>
+                        product.category
+                )
+                .filter(Boolean)
         )
     ];
 }
 
 
 // ========================================
-// Экспорт модуля
+// PRODUCT COUNT
+// ========================================
+
+function getProductsCount() {
+
+    return products.length;
+}
+
+
+// ========================================
+// CATEGORY COUNT
+// ========================================
+
+function getCategoryCount(category) {
+
+    return getProductsByCategory(
+        category
+    ).length;
+}
+
+
+// ========================================
+// EXPORT
 // ========================================
 
 export {
@@ -158,5 +205,7 @@ export {
     getProductsByCategory,
     searchProductsData,
     getAvailableProducts,
-    getCategories
+    getCategories,
+    getProductsCount,
+    getCategoryCount
 };
