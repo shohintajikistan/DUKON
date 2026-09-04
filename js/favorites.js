@@ -1,9 +1,13 @@
+// ============================================================
 // SHOHIN MARKET
-// Favorites module
+// js/favorites.js
+// Работа с избранными товарами
+// ============================================================
 
 import {
     getFavorites,
-    saveFavorites
+    saveFavorites,
+    clearFavorites
 } from "./storage.js";
 
 import {
@@ -11,179 +15,170 @@ import {
 } from "./products.js";
 
 
-// ========================================
-// Получить избранное
-// ========================================
+// ------------------------------------------------------------
+// Получить ID избранных товаров
+// ------------------------------------------------------------
 
-function getCurrentFavorites() {
+function getFavoriteIds() {
     return getFavorites();
 }
 
 
-// ========================================
-// Добавить в избранное
-// ========================================
+// ------------------------------------------------------------
+// Проверить, находится ли товар в избранном
+// ------------------------------------------------------------
+
+function isFavorite(productId) {
+
+    const favorites = getFavorites();
+
+    return favorites.some(
+        id => String(id) === String(productId)
+    );
+}
+
+
+// ------------------------------------------------------------
+// Добавить товар в избранное
+// ------------------------------------------------------------
 
 function addToFavorites(productId) {
 
-    const product =
-        getProductById(productId);
+    const favorites = getFavorites();
 
-    if (!product) {
-        console.error(
-            "Товар не найден:",
-            productId
-        );
-
-        return false;
-    }
-
-    const favorites =
-        getFavorites();
-
-    const exists =
-        favorites.some(
-            id =>
-                Number(id) ===
-                Number(productId)
-        );
+    const exists = favorites.some(
+        id => String(id) === String(productId)
+    );
 
     if (!exists) {
-
-        favorites.push(
-            product.id
-        );
-
-        saveFavorites(
-            favorites
-        );
+        favorites.push(productId);
+        saveFavorites(favorites);
     }
 
-    return true;
+    return favorites;
 }
 
 
-// ========================================
-// Удалить из избранного
-// ========================================
+// ------------------------------------------------------------
+// Удалить товар из избранного
+// ------------------------------------------------------------
 
-function removeFromFavorites(
-    productId
-) {
+function removeFromFavorites(productId) {
 
-    let favorites =
-        getFavorites();
+    const favorites = getFavorites();
 
-    favorites =
-        favorites.filter(
-            id =>
-                Number(id) !==
-                Number(productId)
-        );
-
-    saveFavorites(
-        favorites
+    const updatedFavorites = favorites.filter(
+        id => String(id) !== String(productId)
     );
 
-    return true;
+    saveFavorites(updatedFavorites);
+
+    return updatedFavorites;
 }
 
 
-// ========================================
+// ------------------------------------------------------------
 // Переключить избранное
-// ========================================
+// ------------------------------------------------------------
 
-function toggleProductFavorite(
-    productId
-) {
+function toggleFavorite(productId) {
 
-    const favorites =
-        getFavorites();
+    if (isFavorite(productId)) {
 
-    const exists =
-        favorites.some(
-            id =>
-                Number(id) ===
-                Number(productId)
-        );
+        return {
+            favorite: false,
+            ids: removeFromFavorites(productId)
+        };
 
-    if (exists) {
-
-        removeFromFavorites(
-            productId
-        );
-
-        return false;
     }
 
-    addToFavorites(
-        productId
-    );
-
-    return true;
+    return {
+        favorite: true,
+        ids: addToFavorites(productId)
+    };
 }
 
 
-// ========================================
-// Проверить избранное
-// ========================================
-
-function isProductFavorite(
-    productId
-) {
-
-    return getFavorites().some(
-        id =>
-            Number(id) ===
-            Number(productId)
-    );
-}
-
-
-// ========================================
-// Получить товары
-// ========================================
-
-function getFavoriteProducts() {
-
-    return getFavorites()
-        .map(
-            id =>
-                getProductById(id)
-        )
-        .filter(Boolean);
-}
-
-
-// ========================================
-// Очистить избранное
-// ========================================
-
-function clearFavorites() {
-    saveFavorites([]);
-}
-
-
-// ========================================
-// Количество избранных
-// ========================================
+// ------------------------------------------------------------
+// Количество избранных товаров
+// ------------------------------------------------------------
 
 function getFavoritesCount() {
     return getFavorites().length;
 }
 
 
-// ========================================
+// ------------------------------------------------------------
+// Получить полные данные избранных товаров
+// ------------------------------------------------------------
+
+async function getFavoriteProducts() {
+
+    const ids = getFavorites();
+
+    const products = [];
+
+    for (const id of ids) {
+
+        const product = await getProductById(id);
+
+        if (product) {
+            products.push(product);
+        }
+    }
+
+    return products;
+}
+
+
+// ------------------------------------------------------------
+// Удалить несуществующие товары из избранного
+// ------------------------------------------------------------
+
+async function syncFavorites() {
+
+    const ids = getFavorites();
+
+    const validIds = [];
+
+    for (const id of ids) {
+
+        const product = await getProductById(id);
+
+        if (product) {
+            validIds.push(product.id);
+        }
+    }
+
+    saveFavorites(validIds);
+
+    return validIds;
+}
+
+
+// ------------------------------------------------------------
+// Очистить избранное
+// ------------------------------------------------------------
+
+function emptyFavorites() {
+    clearFavorites();
+
+    return [];
+}
+
+
+// ------------------------------------------------------------
 // Экспорт
-// ========================================
+// ------------------------------------------------------------
 
 export {
-    getCurrentFavorites,
+    getFavoriteIds,
+    isFavorite,
     addToFavorites,
     removeFromFavorites,
-    toggleProductFavorite,
-    isProductFavorite,
+    toggleFavorite,
+    getFavoritesCount,
     getFavoriteProducts,
-    clearFavorites,
-    getFavoritesCount
+    syncFavorites,
+    emptyFavorites
 };
