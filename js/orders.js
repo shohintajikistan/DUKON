@@ -1,281 +1,340 @@
+// ============================================================
 // SHOHIN MARKET
-// Orders module
+// js/orders.js
+// Работа с заказами
+// ============================================================
 
 import {
     getOrders,
-    saveOrders
+    saveOrders,
+    addOrder
 } from "./storage.js";
 
-import {
-    getCartItems,
-    getCartTotal,
-    clearCart,
-    addProductToCart
-} from "./cart.js";
+
+// ------------------------------------------------------------
+// Статусы заказа
+// ------------------------------------------------------------
+
+const ORDER_STATUS = {
+    NEW: "new",
+    CONFIRMED: "confirmed",
+    PREPARING: "preparing",
+    ON_DELIVERY: "on_delivery",
+    DELIVERED: "delivered",
+    CANCELLED: "cancelled"
+};
 
 
-// ========================================
+// ------------------------------------------------------------
+// Названия статусов
+// ------------------------------------------------------------
+
+const ORDER_STATUS_LABELS = {
+    new: "Новый",
+    confirmed: "Подтверждён",
+    preparing: "Собирается",
+    on_delivery: "В доставке",
+    delivered: "Доставлен",
+    cancelled: "Отменён"
+};
+
+
+// ------------------------------------------------------------
 // Получить все заказы
-// ========================================
+// ------------------------------------------------------------
 
-function getCurrentOrders() {
+function getAllOrders() {
     return getOrders();
 }
 
 
-// ========================================
+// ------------------------------------------------------------
+// Найти заказ по ID
+// ------------------------------------------------------------
+
+function getOrderById(orderId) {
+
+    const orders = getOrders();
+
+    return orders.find(
+        order =>
+            String(order.id) === String(orderId)
+    ) || null;
+}
+
+
+// ------------------------------------------------------------
+// Создать уникальный ID заказа
+// ------------------------------------------------------------
+
+function generateOrderId() {
+
+    const now = new Date();
+
+    const datePart =
+        now.getFullYear().toString() +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        String(now.getDate()).padStart(2, "0");
+
+    const timePart =
+        String(now.getHours()).padStart(2, "0") +
+        String(now.getMinutes()).padStart(2, "0") +
+        String(now.getSeconds()).padStart(2, "0");
+
+    const randomPart =
+        Math.floor(100 + Math.random() * 900);
+
+    return `SH-${datePart}-${timePart}-${randomPart}`;
+}
+
+
+// ------------------------------------------------------------
 // Создать заказ
-// ========================================
+// ------------------------------------------------------------
 
-function createOrder(orderData = {}) {
+function createOrder({
+    customer,
+    items,
+    subtotal,
+    deliveryPrice = 0,
+    total,
+    paymentMethod,
+    location,
+    comment = ""
+}) {
 
-    const cartItems =
-        getCartItems();
+    if (!customer || typeof customer !== "object") {
+        throw new Error("Не указаны данные клиента");
+    }
 
-    if (!cartItems.length) {
-        return null;
+    if (!Array.isArray(items) || items.length === 0) {
+        throw new Error("Корзина пуста");
     }
 
     const order = {
 
         id: generateOrderId(),
 
-        date:
-            new Date().toISOString(),
+        createdAt: new Date().toISOString(),
 
-        status: "new",
-
-        statusText:
-            "Новый заказ",
+        status: ORDER_STATUS.NEW,
 
         customer: {
-
-            name:
-                orderData.name || "",
-
-            phone:
-                orderData.phone || ""
+            name: String(customer.name || "").trim(),
+            phone: String(customer.phone || "").trim()
         },
 
-        delivery: {
+        items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price || 0),
+            quantity: Number(item.quantity || 1),
+            unit: item.unit || "шт.",
+            image: item.image || "",
+            subtotal: Number(item.subtotal || 0)
+        })),
 
-            address:
-                orderData.address || "",
+        subtotal: Number(subtotal || 0),
 
-            comment:
-                orderData.comment || ""
-        },
+        deliveryPrice: Number(deliveryPrice || 0),
 
-        location: {
+        total: Number(total || 0),
 
-            lat:
-                orderData.lat ?? null,
+        paymentMethod:
+            paymentMethod === "card"
+                ? "card"
+                : "cash",
 
-            lng:
-                orderData.lng ?? null
-        },
+        location: location
+            ? {
+                address: String(location.address || ""),
+                lat: Number(location.lat || 0),
+                lng: Number(location.lng || 0)
+            }
+            : null,
 
-        payment:
-            orderData.payment || "cash",
-
-        items:
-            cartItems.map(item => ({
-
-                productId:
-                    item.id,
-
-                name:
-                    item.name,
-
-                price:
-                    item.price,
-
-                unit:
-                    item.unit,
-
-                quantity:
-                    item.quantity,
-
-                subtotal:
-                    item.subtotal
-            })),
-
-        total:
-            getCartTotal()
+        comment: String(comment || "").trim()
     };
 
-    const orders =
-        getOrders();
 
-    orders.unshift(order);
+    const success = addOrder(order);
 
-    saveOrders(orders);
-
-    clearCart();
+    if (!success) {
+        throw new Error("Не удалось сохранить заказ");
+    }
 
     return order;
 }
 
 
-// ========================================
-// Номер заказа
-// ========================================
+// ------------------------------------------------------------
+// Обновить статус заказа
+// ------------------------------------------------------------
 
-function generateOrderId() {
+function updateOrderStatus(orderId, status) {
 
-    const time =
-        Date.now().toString();
+    if (!Object.values(ORDER_STATUS).includes(status)) {
+        throw new Error("Недопустимый статус заказа");
+    }
 
-    return "SH-" +
-        time.slice(-8);
-}
+    const orders = getOrders();
 
-
-// ========================================
-// Найти заказ
-// ========================================
-
-function getOrderById(orderId) {
-
-    return getOrders().find(
-        order =>
-            String(order.id) ===
-            String(orderId)
+    const order = orders.find(
+        item =>
+            String(item.id) === String(orderId)
     );
-}
-
-
-// ========================================
-// Изменить статус
-// ========================================
-
-function updateOrderStatus(
-    orderId,
-    status,
-    statusText = ""
-) {
-
-    const orders =
-        getOrders();
-
-    const order =
-        orders.find(
-            item =>
-                String(item.id) ===
-                String(orderId)
-        );
 
     if (!order) {
-        return false;
+        throw new Error("Заказ не найден");
     }
 
-    order.status =
-        status;
-
-    if (statusText) {
-
-        order.statusText =
-            statusText;
-    }
+    order.status = status;
 
     order.updatedAt =
         new Date().toISOString();
 
     saveOrders(orders);
 
-    return true;
+    return order;
 }
 
 
-// ========================================
+// ------------------------------------------------------------
+// Отменить заказ
+// ------------------------------------------------------------
+
+function cancelOrder(orderId) {
+
+    return updateOrderStatus(
+        orderId,
+        ORDER_STATUS.CANCELLED
+    );
+}
+
+
+// ------------------------------------------------------------
+// Повторить заказ
+// ------------------------------------------------------------
+
+function getRepeatOrderItems(orderId) {
+
+    const order = getOrderById(orderId);
+
+    if (!order) {
+        return [];
+    }
+
+    if (!Array.isArray(order.items)) {
+        return [];
+    }
+
+    return order.items.map(item => ({
+        id: item.id,
+        quantity: item.quantity
+    }));
+}
+
+
+// ------------------------------------------------------------
 // Последний заказ
-// ========================================
+// ------------------------------------------------------------
 
 function getLastOrder() {
 
-    const orders =
-        getOrders();
+    const orders = getOrders();
 
-    return orders.length
+    return orders.length > 0
         ? orders[0]
         : null;
 }
 
 
-// ========================================
-// Подтвердить получение
-// ========================================
+// ------------------------------------------------------------
+// Количество заказов
+// ------------------------------------------------------------
 
-function confirmOrderReceived(
-    orderId
-) {
-
-    return updateOrderStatus(
-        orderId,
-        "completed",
-        "Получен"
-    );
+function getOrdersCount() {
+    return getOrders().length;
 }
 
 
-// ========================================
-// Отменить заказ
-// ========================================
+// ------------------------------------------------------------
+// Название статуса
+// ------------------------------------------------------------
 
-function cancelOrder(
-    orderId
-) {
+function getOrderStatusLabel(status) {
 
-    return updateOrderStatus(
-        orderId,
-        "cancelled",
-        "Отменён"
-    );
+    return ORDER_STATUS_LABELS[status]
+        || "Неизвестный статус";
 }
 
 
-// ========================================
-// Повторить последний заказ
-// ========================================
+// ------------------------------------------------------------
+// Форматирование даты заказа
+// ------------------------------------------------------------
 
-function repeatLastOrder() {
+function formatOrderDate(dateString) {
 
-    const order =
-        getLastOrder();
-
-    if (
-        !order ||
-        !order.items
-    ) {
-        return false;
+    if (!dateString) {
+        return "";
     }
 
-    clearCart();
+    const date = new Date(dateString);
 
-    order.items.forEach(item => {
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
 
-        addProductToCart(
-            item.productId,
-            item.quantity
-        );
-
-    });
-
-    return true;
+    return new Intl.DateTimeFormat(
+        "ru-RU",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    ).format(date);
 }
 
 
-// ========================================
+// ------------------------------------------------------------
+// Форматирование способа оплаты
+// ------------------------------------------------------------
+
+function getPaymentMethodLabel(method) {
+
+    if (method === "card") {
+        return "Банковская карта";
+    }
+
+    return "Наличными при получении";
+}
+
+
+// ------------------------------------------------------------
 // Экспорт
-// ========================================
+// ------------------------------------------------------------
 
 export {
-    getCurrentOrders,
-    createOrder,
+    ORDER_STATUS,
+    ORDER_STATUS_LABELS,
+
+    getAllOrders,
     getOrderById,
+
+    generateOrderId,
+    createOrder,
+
     updateOrderStatus,
-    getLastOrder,
-    confirmOrderReceived,
     cancelOrder,
-    repeatLastOrder
+
+    getRepeatOrderItems,
+
+    getLastOrder,
+    getOrdersCount,
+
+    getOrderStatusLabel,
+    formatOrderDate,
+    getPaymentMethodLabel
 };
