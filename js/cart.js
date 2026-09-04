@@ -1,320 +1,347 @@
+// ============================================================
 // SHOHIN MARKET
-// Cart module
+// js/cart.js
+// Работа с корзиной
+// ============================================================
 
 import {
     getCart,
-    saveCart
+    saveCart,
+    clearCart
 } from "./storage.js";
 
 import {
-    getProductById
+    getProductById,
+    getProductPrice,
+    isProductAvailable
 } from "./products.js";
 
 
-// ========================================
-// Получить текущую корзину
-// ========================================
+// ------------------------------------------------------------
+// Получить корзину
+// ------------------------------------------------------------
 
-function getCurrentCart() {
+function getCartItems() {
     return getCart();
 }
 
 
-// ========================================
-// Добавить товар
-// ========================================
+// ------------------------------------------------------------
+// Добавить товар в корзину
+// ------------------------------------------------------------
 
-function addProductToCart(productId, quantity = 1) {
+async function addToCart(productId, quantity = 1) {
 
-    const product =
-        getProductById(productId);
+    const product = await getProductById(productId);
 
     if (!product) {
-        console.error(
-            "Товар не найден:",
-            productId
-        );
-
-        return false;
+        throw new Error("Товар не найден");
     }
 
-    if (!product.available) {
-        console.warn(
-            "Товар недоступен:",
-            product.name
-        );
-
-        return false;
+    if (!isProductAvailable(product)) {
+        throw new Error("Этот товар сейчас недоступен");
     }
+
+    quantity = Number(quantity);
+
+    if (!Number.isFinite(quantity) || quantity < 1) {
+        quantity = 1;
+    }
+
+    quantity = Math.floor(quantity);
 
     const cart = getCart();
 
-    const existingItem =
-        cart.find(
-            item =>
-                Number(item.productId) ===
-                Number(productId)
-        );
+    const existingItem = cart.find(
+        item => String(item.id) === String(product.id)
+    );
 
     if (existingItem) {
 
-        existingItem.quantity +=
-            Number(quantity);
+        existingItem.quantity += quantity;
 
     } else {
 
         cart.push({
-            productId: product.id,
-            quantity: Number(quantity)
+            id: product.id,
+            quantity: quantity
         });
     }
 
     saveCart(cart);
 
-    return true;
+    return cart;
 }
 
 
-// ========================================
-// Изменить количество
-// ========================================
+// ------------------------------------------------------------
+// Установить количество товара
+// ------------------------------------------------------------
 
-function updateCartQuantity(
-    productId,
-    quantity
-) {
+async function setCartQuantity(productId, quantity) {
 
-    const cart = getCart();
+    const product = await getProductById(productId);
 
-    const item =
-        cart.find(
-            item =>
-                Number(item.productId) ===
-                Number(productId)
-        );
-
-    if (!item) {
-        return false;
+    if (!product) {
+        throw new Error("Товар не найден");
     }
 
     quantity = Number(quantity);
 
+    if (!Number.isFinite(quantity)) {
+        quantity = 1;
+    }
+
+    quantity = Math.floor(quantity);
+
+    const cart = getCart();
+
+    const item = cart.find(
+        cartItem => String(cartItem.id) === String(productId)
+    );
+
+    if (!item) {
+        return cart;
+    }
+
     if (quantity <= 0) {
-        return removeProductFromCart(
-            productId
+
+        const updatedCart = cart.filter(
+            cartItem =>
+                String(cartItem.id) !== String(productId)
         );
+
+        saveCart(updatedCart);
+
+        return updatedCart;
     }
 
     item.quantity = quantity;
 
     saveCart(cart);
 
-    return true;
+    return cart;
 }
 
 
-// ========================================
-// Увеличить
-// ========================================
+// ------------------------------------------------------------
+// Увеличить количество
+// ------------------------------------------------------------
 
-function increaseCartQuantity(
-    productId
-) {
+async function increaseCartItem(productId) {
 
     const cart = getCart();
 
-    const item =
-        cart.find(
-            item =>
-                Number(item.productId) ===
-                Number(productId)
-        );
+    const item = cart.find(
+        cartItem => String(cartItem.id) === String(productId)
+    );
 
     if (!item) {
-        return false;
+        return addToCart(productId, 1);
     }
 
-    item.quantity++;
-
-    saveCart(cart);
-
-    return true;
-}
-
-
-// ========================================
-// Уменьшить
-// ========================================
-
-function decreaseCartQuantity(
-    productId
-) {
-
-    const cart = getCart();
-
-    const item =
-        cart.find(
-            item =>
-                Number(item.productId) ===
-                Number(productId)
-        );
-
-    if (!item) {
-        return false;
-    }
-
-    item.quantity--;
-
-    if (item.quantity <= 0) {
-
-        return removeProductFromCart(
-            productId
-        );
-    }
-
-    saveCart(cart);
-
-    return true;
-}
-
-
-// ========================================
-// Удалить товар
-// ========================================
-
-function removeProductFromCart(
-    productId
-) {
-
-    let cart = getCart();
-
-    cart =
-        cart.filter(
-            item =>
-                Number(item.productId) !==
-                Number(productId)
-        );
-
-    saveCart(cart);
-
-    return true;
-}
-
-
-// ========================================
-// Очистить корзину
-// ========================================
-
-function clearCart() {
-    saveCart([]);
-}
-
-
-// ========================================
-// Получить товары корзины
-// ========================================
-
-function getCartItems() {
-
-    const cart = getCart();
-
-    return cart
-        .map(item => {
-
-            const product =
-                getProductById(
-                    item.productId
-                );
-
-            if (!product) {
-                return null;
-            }
-
-            return {
-                ...product,
-
-                quantity:
-                    Number(item.quantity),
-
-                subtotal:
-                    product.price *
-                    Number(item.quantity)
-            };
-        })
-
-        .filter(Boolean);
-}
-
-
-// ========================================
-// Общая сумма
-// ========================================
-
-function getCartTotal() {
-
-    return getCartItems()
-        .reduce(
-            (total, item) =>
-                total + item.subtotal,
-            0
-        );
-}
-
-
-// ========================================
-// Количество товаров
-// ========================================
-
-function getCartCount() {
-
-    return getCart()
-        .reduce(
-            (total, item) =>
-                total +
-                Number(item.quantity),
-            0
-        );
-}
-
-
-// ========================================
-// Проверить наличие товара
-// ========================================
-
-function isProductInCart(productId) {
-
-    return getCart().some(
-        item =>
-            Number(item.productId) ===
-            Number(productId)
+    return setCartQuantity(
+        productId,
+        item.quantity + 1
     );
 }
 
 
-// ========================================
+// ------------------------------------------------------------
+// Уменьшить количество
+// ------------------------------------------------------------
+
+async function decreaseCartItem(productId) {
+
+    const cart = getCart();
+
+    const item = cart.find(
+        cartItem => String(cartItem.id) === String(productId)
+    );
+
+    if (!item) {
+        return cart;
+    }
+
+    return setCartQuantity(
+        productId,
+        item.quantity - 1
+    );
+}
+
+
+// ------------------------------------------------------------
+// Удалить товар
+// ------------------------------------------------------------
+
+function removeFromCart(productId) {
+
+    const cart = getCart();
+
+    const updatedCart = cart.filter(
+        item =>
+            String(item.id) !== String(productId)
+    );
+
+    saveCart(updatedCart);
+
+    return updatedCart;
+}
+
+
+// ------------------------------------------------------------
+// Очистить корзину
+// ------------------------------------------------------------
+
+function emptyCart() {
+    clearCart();
+
+    return [];
+}
+
+
+// ------------------------------------------------------------
+// Количество единиц товара в корзине
+// ------------------------------------------------------------
+
+function getCartCount() {
+
+    const cart = getCart();
+
+    return cart.reduce(
+        (total, item) =>
+            total + Number(item.quantity || 0),
+        0
+    );
+}
+
+
+// ------------------------------------------------------------
+// Получить полную корзину вместе с данными товаров
+// ------------------------------------------------------------
+
+async function getDetailedCart() {
+
+    const cart = getCart();
+
+    const detailedItems = [];
+
+    for (const item of cart) {
+
+        const product = await getProductById(item.id);
+
+        if (!product) {
+            continue;
+        }
+
+        const quantity = Math.max(
+            1,
+            Number(item.quantity || 1)
+        );
+
+        const price = getProductPrice(product);
+
+        detailedItems.push({
+            id: product.id,
+            name: product.name,
+            description: product.description || "",
+            category: product.category || "",
+            image: product.image || "",
+            unit: product.unit || "шт.",
+            price: price,
+            quantity: quantity,
+            available: isProductAvailable(product),
+            subtotal: price * quantity
+        });
+    }
+
+    return detailedItems;
+}
+
+
+// ------------------------------------------------------------
+// Сумма товаров
+// ------------------------------------------------------------
+
+async function getCartSubtotal() {
+
+    const items = await getDetailedCart();
+
+    return items.reduce(
+        (total, item) =>
+            total + item.subtotal,
+        0
+    );
+}
+
+
+// ------------------------------------------------------------
+// Проверка пустая ли корзина
+// ------------------------------------------------------------
+
+function isCartEmpty() {
+    return getCart().length === 0;
+}
+
+
+// ------------------------------------------------------------
+// Синхронизация корзины
+// Удаляет товары, которых больше нет в каталоге
+// ------------------------------------------------------------
+
+async function syncCart() {
+
+    const cart = getCart();
+
+    const validItems = [];
+
+    for (const item of cart) {
+
+        const product = await getProductById(item.id);
+
+        if (!product) {
+            continue;
+        }
+
+        if (!isProductAvailable(product)) {
+            validItems.push({
+                ...item,
+                quantity: Number(item.quantity || 1)
+            });
+
+            continue;
+        }
+
+        validItems.push({
+            ...item,
+            quantity: Math.max(
+                1,
+                Number(item.quantity || 1)
+            )
+        });
+    }
+
+    saveCart(validItems);
+
+    return validItems;
+}
+
+
+// ------------------------------------------------------------
 // Экспорт
-// ========================================
+// ------------------------------------------------------------
 
 export {
-    getCurrentCart,
-
-    addProductToCart,
-
-    updateCartQuantity,
-
-    increaseCartQuantity,
-
-    decreaseCartQuantity,
-
-    removeProductFromCart,
-
-    clearCart,
-
     getCartItems,
-
-    getCartTotal,
-
+    addToCart,
+    setCartQuantity,
+    increaseCartItem,
+    decreaseCartItem,
+    removeFromCart,
+    emptyCart,
     getCartCount,
-
-    isProductInCart
+    getDetailedCart,
+    getCartSubtotal,
+    isCartEmpty,
+    syncCart
 };
