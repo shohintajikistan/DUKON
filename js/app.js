@@ -1,113 +1,455 @@
+// ============================================================
 // SHOHIN MARKET
-// Main Application Controller
+// js/app.js
+// Главный контроллер приложения
+// ============================================================
 
 import {
-    loadProducts,
     getProducts,
+    getProductById,
     getProductsByCategory,
-    searchProductsData,
-    getProductById
+    searchProducts,
+    formatPrice,
+    isProductAvailable
 } from "./products.js";
 
 import {
-    addProductToCart,
-    increaseCartQuantity as cartIncrease,
-    decreaseCartQuantity as cartDecrease,
-    removeProductFromCart as cartRemove,
-    clearCart as cartClear,
     getCartItems,
-    getCartTotal,
-    getCartCount
+    addToCart,
+    increaseCartItem,
+    decreaseCartItem,
+    removeFromCart,
+    getCartCount,
+    getDetailedCart,
+    getCartSubtotal,
+    isCartEmpty,
+    emptyCart
 } from "./cart.js";
 
 import {
-    toggleProductFavorite,
-    isProductFavorite,
-    getFavoriteProducts
+    isFavorite,
+    toggleFavorite,
+    getFavoritesCount,
+    getFavoriteProducts,
+    syncFavorites
 } from "./favorites.js";
 
 import {
-    getCurrentOrders,
     createOrder,
-    confirmOrderReceived,
-    repeatLastOrder as repeatLastOrderModule
+    getAllOrders,
+    getOrderById,
+    getOrderStatusLabel,
+    getPaymentMethodLabel,
+    formatOrderDate
 } from "./orders.js";
 
 import {
-    setDeliveryLocation,
-    getDeliveryLocation,
-    setDeliveryAddress
+    getSelectedLocation,
+    setLocationAddress,
+    clearSelectedLocation,
+    getLocationDisplayText,
+    initDeliveryMap,
+    coordinatesToMapPosition
 } from "./map.js";
 
 
-/* =========================================================
-   STATE
-========================================================= */
+// ============================================================
+// СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+// ============================================================
 
-let currentPage = "home";
-let currentCategory = null;
-let currentSearch = "";
+const state = {
+    currentPage: "home",
+    currentCategory: "all",
+    currentSearch: "",
+    currentProduct: null,
+    deliveryPrice: 0,
+    products: [],
+    mapInitialized: false
+};
 
 
-/* =========================================================
-   DOM
-========================================================= */
+// ============================================================
+// DOM
+// ============================================================
 
-function $(id) {
-    return document.getElementById(id);
+const $ = selector =>
+    document.querySelector(selector);
+
+const $$ = selector =>
+    [...document.querySelectorAll(selector)];
+
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+
+document.addEventListener("DOMContentLoaded", initApp);
+
+
+async function initApp() {
+
+    try {
+
+        showLoader();
+
+        bindEvents();
+
+        await loadCatalog();
+
+        await syncFavorites();
+
+        updateBadges();
+
+        renderCategories();
+
+        renderProducts();
+
+        renderFavorites();
+
+        renderCart();
+
+        renderOrders();
+
+        restoreCheckoutData();
+
+        hideLoader();
+
+        showPage("home");
+
+    } catch (error) {
+
+        console.error(
+            "SHOHIN MARKET INIT ERROR:",
+            error
+        );
+
+        hideLoader();
+
+        showToast(
+            "Не удалось загрузить магазин",
+            "error"
+        );
+    }
 }
 
 
-/* =========================================================
-   INITIALIZATION
-========================================================= */
+// ============================================================
+// ЗАГРУЗКА КАТАЛОГА
+// ============================================================
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function loadCatalog() {
 
-    console.log("SHOHIN MARKET: запуск приложения");
+    state.products =
+        await getProducts();
 
-    await loadProducts();
+    return state.products;
+}
 
-    renderProducts();
-    renderFavorites();
-    renderCart();
-    renderOrders();
 
-    updateCartUI();
+// ============================================================
+// СОБЫТИЯ
+// ============================================================
 
-    setupSearch();
+function bindEvents() {
 
-    console.log(
-        "SHOHIN MARKET: приложение готово"
+    // --------------------------------------------------------
+    // Header
+    // --------------------------------------------------------
+
+    $("#menuButton")?.addEventListener(
+        "click",
+        openMenu
     );
 
-});
+    $("#favoritesButton")?.addEventListener(
+        "click",
+        () => showPage("favorites")
+    );
+
+    $("#cartButton")?.addEventListener(
+        "click",
+        () => showPage("cart")
+    );
 
 
-/* =========================================================
-   PAGE NAVIGATION
-========================================================= */
+    // --------------------------------------------------------
+    // Search
+    // --------------------------------------------------------
 
-function openPage(page) {
+    $("#search")?.addEventListener(
+        "input",
+        handleSearch
+    );
 
-    const pages =
-        document.querySelectorAll(".page");
+    $("#clearSearch")?.addEventListener(
+        "click",
+        clearSearch
+    );
 
-    pages.forEach(section => {
-        section.classList.remove("active");
+
+    // --------------------------------------------------------
+    // Bottom navigation
+    // --------------------------------------------------------
+
+    $$("[data-nav]").forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const page =
+                    button.dataset.nav;
+
+                if (page === "menu") {
+                    openMenu();
+                    return;
+                }
+
+                showPage(page);
+            }
+        );
     });
 
+
+    $("#bottomCartButton")?.addEventListener(
+        "click",
+        () => showPage("cart")
+    );
+
+
+    // --------------------------------------------------------
+    // Menu
+    // --------------------------------------------------------
+
+    $$(".menu-card").forEach(card => {
+
+        card.addEventListener(
+            "click",
+            () => {
+
+                const page =
+                    card.dataset.menuPage;
+
+                closeMenu();
+
+                if (page) {
+                    showPage(page);
+                }
+            }
+        );
+    });
+
+
+    $("#closeMenuButton")?.addEventListener(
+        "click",
+        closeMenu
+    );
+
+
+    $("#menuModal")?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                $("#menuModal")
+            ) {
+                closeMenu();
+            }
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Cart
+    // --------------------------------------------------------
+
+    $("#checkoutButton")?.addEventListener(
+        "click",
+        openCheckout
+    );
+
+
+    // --------------------------------------------------------
+    // Checkout
+    // --------------------------------------------------------
+
+    $("#openMapButton")?.addEventListener(
+        "click",
+        openMap
+    );
+
+    $("#placeOrderButton")?.addEventListener(
+        "click",
+        placeOrder
+    );
+
+
+    // --------------------------------------------------------
+    // Map
+    // --------------------------------------------------------
+
+    $("#confirmMapButton")?.addEventListener(
+        "click",
+        confirmMap
+    );
+
+    $("#closeMapButton")?.addEventListener(
+        "click",
+        closeMap
+    );
+
+
+    $("#mapModal")?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                $("#mapModal")
+            ) {
+                closeMap();
+            }
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Product modal
+    // --------------------------------------------------------
+
+    $("#closeProductModal")?.addEventListener(
+        "click",
+        closeProductModal
+    );
+
+    $("#productModal")?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                $("#productModal")
+            ) {
+                closeProductModal();
+            }
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Success modal
+    // --------------------------------------------------------
+
+    $("#successHomeButton")?.addEventListener(
+        "click",
+        () => {
+
+            closeSuccessModal();
+
+            showPage("home");
+        }
+    );
+
+
+    $("#successOrdersButton")?.addEventListener(
+        "click",
+        () => {
+
+            closeSuccessModal();
+
+            showPage("orders");
+        }
+    );
+
+
+    $("#closeSuccessModal")?.addEventListener(
+        "click",
+        closeSuccessModal
+    );
+
+
+    // --------------------------------------------------------
+    // Contact actions
+    // --------------------------------------------------------
+
+    $("#contactShare")?.addEventListener(
+        "click",
+        shareShop
+    );
+
+
+    // --------------------------------------------------------
+    // Checkout fields
+    // --------------------------------------------------------
+
+    $("#customerName")?.addEventListener(
+        "input",
+        saveCheckoutDraft
+    );
+
+    $("#customerPhone")?.addEventListener(
+        "input",
+        saveCheckoutDraft
+    );
+
+    $("#address")?.addEventListener(
+        "input",
+        saveCheckoutDraft
+    );
+
+    $("#comment")?.addEventListener(
+        "input",
+        saveCheckoutDraft
+    );
+}
+
+
+// ============================================================
+// СТРАНИЦЫ
+// ============================================================
+
+function showPage(page) {
+
+    const pages = {
+        home: $("#homePage"),
+        favorites: $("#favoritesPage"),
+        cart: $("#cartPage"),
+        checkout: $("#checkoutPage"),
+        orders: $("#ordersPage"),
+        contacts: $("#contactsPage"),
+        about: $("#aboutPage"),
+        policy: $("#policyPage")
+    };
+
+
+    Object.values(pages).forEach(
+        pageElement => {
+
+            if (pageElement) {
+                pageElement.classList.remove(
+                    "active"
+                );
+            }
+        }
+    );
+
+
     const target =
-        $(page);
+        pages[page] || pages.home;
 
-    if (target) {
-        target.classList.add("active");
-        currentPage = page;
-    }
 
-    updateBottomNavigation();
+    target?.classList.add("active");
 
-    closeSHMenu();
+
+    state.currentPage =
+        page in pages
+            ? page
+            : "home";
+
+
+    updateNavigation();
+
 
     window.scrollTo({
         top: 0,
@@ -115,608 +457,534 @@ function openPage(page) {
     });
 
 
-    if (page === "favorites") {
+    if (state.currentPage === "favorites") {
         renderFavorites();
     }
 
-    if (page === "cart") {
+    if (state.currentPage === "cart") {
         renderCart();
     }
 
-    if (page === "orders") {
+    if (state.currentPage === "orders") {
         renderOrders();
     }
 
-    if (page === "checkout") {
-        updateCheckoutTotal();
+    if (state.currentPage === "checkout") {
+        renderCheckoutTotal();
     }
-
-
-    try {
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "shohin-page-change",
-                {
-                    detail: {
-                        page
-                    }
-                }
-            )
-        );
-
-    } catch (error) {}
-
 }
 
 
-/* =========================================================
-   BOTTOM NAV
-========================================================= */
+// ============================================================
+// НИЖНЯЯ НАВИГАЦИЯ
+// ============================================================
 
-function updateBottomNavigation() {
+function updateNavigation() {
 
-    const buttons =
-        document.querySelectorAll(
-            ".bottom .nav-btn"
+    $$("[data-nav]").forEach(button => {
+
+        const page =
+            button.dataset.nav;
+
+        button.classList.toggle(
+            "active",
+            page === state.currentPage
         );
-
-    buttons.forEach(button => {
-
-        button.classList.remove("active");
-
     });
-
-
-    const mapping = {
-
-        home: 0,
-        favorites: 1,
-        cart: 2,
-        orders: 3
-
-    };
-
-
-    if (
-        Object.prototype.hasOwnProperty.call(
-            mapping,
-            currentPage
-        )
-    ) {
-
-        const index =
-            mapping[currentPage];
-
-        if (buttons[index]) {
-            buttons[index].classList.add(
-                "active"
-            );
-        }
-
-    }
-
 }
 
 
-/* =========================================================
-   TOAST
-========================================================= */
-
-function showToast(message) {
-
-    const toast =
-        $("toast");
-
-    if (!toast) {
-        return;
-    }
-
-    toast.textContent =
-        String(message || "");
-
-    toast.classList.add("show");
-
-    clearTimeout(
-        window.__shohinToastTimer
-    );
-
-    window.__shohinToastTimer =
-        setTimeout(() => {
-
-            toast.classList.remove("show");
-
-        }, 2600);
-
-}
-
-
-/* =========================================================
-   PRICE
-========================================================= */
-
-function formatPrice(price) {
-
-    const number =
-        Number(price) || 0;
-
-    return number.toLocaleString(
-        "ru-RU"
-    ) + " сомони";
-
-}
-
-
-/* =========================================================
-   DATE
-========================================================= */
-
-function formatDate(date) {
-
-    if (!date) {
-        return "";
-    }
-
-    const d =
-        new Date(date);
-
-    if (
-        Number.isNaN(
-            d.getTime()
-        )
-    ) {
-        return "";
-    }
-
-    return d.toLocaleDateString(
-        "ru-RU",
-        {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-
-}
-
-
-/* =========================================================
-   PRODUCT IMAGE
-========================================================= */
-
-function renderProductImage(product) {
-
-    const image =
-        String(
-            product?.image || ""
-        );
-
-    if (!image) {
-        return "🛒";
-    }
-
-
-    /*
-       Наш products.json сейчас хранит emoji.
-       Поэтому emoji показываем как текст.
-       Если позже image станет URL,
-       автоматически используем <img>.
-    */
-
-    const isURL =
-        image.startsWith("http://") ||
-        image.startsWith("https://") ||
-        image.startsWith("./") ||
-        image.startsWith("../") ||
-        image.startsWith("assets/") ||
-        image.startsWith("/");
-
-
-    if (isURL) {
-
-        return `
-            <img
-                src="${escapeHTML(image)}"
-                alt="${escapeHTML(product.name)}"
-                loading="lazy"
-                onerror="this.style.display='none';this.parentElement.classList.add('image-error')"
-            >
-        `;
-
-    }
-
-
-    return `
-        <span class="product-emoji">
-            ${escapeHTML(image)}
-        </span>
-    `;
-
-}
-
-
-/* =========================================================
-   PRODUCT CARD
-========================================================= */
-
-function productCard(product) {
-
-    const favorite =
-        isProductFavorite(
-            product.id
-        );
-
-    const available =
-        product.available !== false;
-
-
-    return `
-
-        <article
-            class="product product-card"
-            data-product-id="${product.id}"
-        >
-
-            <div class="product-image">
-
-                ${
-                    product.badge
-                        ? `
-                            <span class="badge">
-                                ${escapeHTML(product.badge)}
-                            </span>
-                          `
-                        : ""
-                }
-
-                <button
-                    class="favorite favorite-button ${
-                        favorite ? "active" : ""
-                    }"
-                    type="button"
-                    onclick="toggleFavorite(${product.id})"
-                    aria-label="Добавить в избранное"
-                >
-                    ${favorite ? "♥" : "♡"}
-                </button>
-
-
-                <div class="product-visual">
-
-                    ${renderProductImage(product)}
-
-                </div>
-
-            </div>
-
-
-            <div class="product-info">
-
-                <div class="product-name">
-                    ${escapeHTML(product.name)}
-                </div>
-
-                <div class="product-meta">
-                    ${escapeHTML(product.unit || "")}
-                </div>
-
-
-                <div class="product-bottom">
-
-                    <div class="price">
-
-                        ${formatPrice(product.price)}
-
-                    </div>
-
-
-                    ${
-                        available
-                        ?
-                        `
-                            <button
-                                class="add-btn"
-                                type="button"
-                                onclick="addToCart(${product.id})"
-                                aria-label="Добавить в корзину"
-                            >
-                                +
-                            </button>
-                        `
-                        :
-                        `
-                            <span
-                                class="product-unavailable"
-                            >
-                                Нет
-                            </span>
-                        `
-                    }
-
-                </div>
-
-            </div>
-
-        </article>
-
-    `;
-
-}
-
-
-/* =========================================================
-   RENDER PRODUCTS
-========================================================= */
-
-function renderProducts(
-    list = null
-) {
+// ============================================================
+// КАТЕГОРИИ
+// ============================================================
+
+function renderCategories() {
 
     const container =
-        $("products");
+        $("#categoriesContainer");
 
     if (!container) {
         return;
     }
 
 
-    let items;
+    const categories = [];
 
+    state.products.forEach(product => {
 
-    if (Array.isArray(list)) {
-
-        items = list;
-
-    } else if (currentSearch) {
-
-        items =
-            searchProductsData(
-                currentSearch
+        if (
+            product.category &&
+            !categories.includes(
+                product.category
+            )
+        ) {
+            categories.push(
+                product.category
             );
+        }
+    });
 
-    } else if (currentCategory) {
 
-        items =
-            getProductsByCategory(
-                currentCategory
+    let html = `
+        <button
+            class="category-chip active"
+            data-category="all"
+        >
+            Все
+        </button>
+    `;
+
+
+    categories.forEach(category => {
+
+        html += `
+            <button
+                class="category-chip"
+                data-category="${escapeHTML(category)}"
+            >
+                ${escapeHTML(category)}
+            </button>
+        `;
+    });
+
+
+    container.innerHTML = html;
+
+
+    container
+        .querySelectorAll(
+            "[data-category]"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    state.currentCategory =
+                        button.dataset.category;
+
+                    state.currentSearch = "";
+
+                    if ($("#search")) {
+                        $("#search").value = "";
+                    }
+
+                    container
+                        .querySelectorAll(
+                            "[data-category]"
+                        )
+                        .forEach(item =>
+                            item.classList.remove(
+                                "active"
+                            )
+                        );
+
+                    button.classList.add(
+                        "active"
+                    );
+
+                    renderProducts();
+                }
             );
+        });
+}
 
-    } else {
 
-        items =
-            getProducts();
+// ============================================================
+// ТОВАРЫ
+// ============================================================
 
+function renderProducts() {
+
+    const container =
+        $("#productsContainer");
+
+    if (!container) {
+        return;
     }
 
 
-    if (!items.length) {
+    let products =
+        [...state.products];
+
+
+    // --------------------------------------------------------
+    // Категория
+    // --------------------------------------------------------
+
+    if (
+        state.currentCategory !== "all"
+    ) {
+
+        products =
+            products.filter(
+                product =>
+                    product.category ===
+                    state.currentCategory
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // Поиск
+    // --------------------------------------------------------
+
+    if (state.currentSearch) {
+
+        const query =
+            state.currentSearch
+                .toLowerCase()
+                .trim();
+
+        products =
+            products.filter(product => {
+
+                const name =
+                    String(
+                        product.name || ""
+                    ).toLowerCase();
+
+                const description =
+                    String(
+                        product.description || ""
+                    ).toLowerCase();
+
+                const category =
+                    String(
+                        product.category || ""
+                    ).toLowerCase();
+
+                return (
+                    name.includes(query) ||
+                    description.includes(query) ||
+                    category.includes(query)
+                );
+            });
+    }
+
+
+    // --------------------------------------------------------
+    // Пустой результат
+    // --------------------------------------------------------
+
+    if (products.length === 0) {
 
         container.innerHTML = "";
 
-        const noResults =
-            $("noResults");
-
-        if (noResults) {
-            noResults.classList.add(
-                "show"
-            );
-        }
+        $("#searchEmpty")
+            ?.classList.add("active");
 
         return;
-
     }
 
 
-    const noResults =
-        $("noResults");
-
-    if (noResults) {
-        noResults.classList.remove(
-            "show"
-        );
-    }
+    $("#searchEmpty")
+        ?.classList.remove("active");
 
 
     container.innerHTML =
-        items
-            .map(productCard)
+        products
+            .map(renderProductCard)
             .join("");
 
+
+    bindProductEvents();
 }
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
+// ============================================================
+// КАРТОЧКА ТОВАРА
+// ============================================================
 
-function setupSearch() {
+function renderProductCard(product) {
 
-    const input =
-        $("searchInput") ||
-        $("search");
+    const favorite =
+        isFavorite(product.id);
 
-
-    if (!input) {
-        return;
-    }
+    const available =
+        isProductAvailable(product);
 
 
-    input.addEventListener(
-        "input",
-        event => {
+    const image =
+        product.image ||
+        "./assets/products/placeholder.svg";
 
-            performSearch(
-                event.target.value
-            );
 
-        }
-    );
+    return `
+        <article
+            class="product-card ${
+                available
+                    ? ""
+                    : "is-unavailable"
+            }"
+            data-product-id="${escapeHTML(
+                String(product.id)
+            )}"
+        >
 
+            <button
+                class="product-favorite ${
+                    favorite
+                        ? "active"
+                        : ""
+                }"
+                data-action="favorite"
+                aria-label="Избранное"
+            >
+                ${favorite ? "♥" : "♡"}
+            </button>
+
+
+            <button
+                class="product-image-button"
+                data-action="details"
+                aria-label="Подробнее"
+            >
+                <img
+                    class="product-image"
+                    src="${escapeHTML(image)}"
+                    alt="${escapeHTML(
+                        product.name || "Товар"
+                    )}"
+                    loading="lazy"
+                    onerror="this.src='./assets/products/placeholder.svg'"
+                >
+            </button>
+
+
+            <div class="product-info">
+
+                <div class="product-category">
+                    ${escapeHTML(
+                        product.category || ""
+                    )}
+                </div>
+
+                <h3 class="product-name">
+                    ${escapeHTML(
+                        product.name || "Товар"
+                    )}
+                </h3>
+
+                <div class="product-bottom">
+
+                    <strong class="product-price">
+                        ${formatPrice(
+                            product.price
+                        )}
+                    </strong>
+
+                    <span class="product-unit">
+                        ${escapeHTML(
+                            product.unit || "шт."
+                        )}
+                    </span>
+
+                </div>
+
+
+                ${
+                    available
+                        ? `
+                            <button
+                                class="add-cart-button"
+                                data-action="add"
+                            >
+                                В корзину
+                            </button>
+                        `
+                        : `
+                            <button
+                                class="add-cart-button disabled"
+                                disabled
+                            >
+                                Нет в наличии
+                            </button>
+                        `
+                }
+
+            </div>
+
+        </article>
+    `;
 }
 
 
-function performSearch(
-    value = null
-) {
+// ============================================================
+// СОБЫТИЯ ТОВАРОВ
+// ============================================================
 
-    const input =
-        $("searchInput") ||
-        $("search");
+function bindProductEvents() {
 
+    $$(".product-card").forEach(card => {
 
-    if (
-        value === null &&
-        input
-    ) {
-
-        value =
-            input.value;
-
-    }
+        const productId =
+            card.dataset.productId;
 
 
-    currentSearch =
-        String(value || "")
-            .trim()
-            .toLowerCase();
+        card.addEventListener(
+            "click",
+            event => {
+
+                const actionButton =
+                    event.target.closest(
+                        "[data-action]"
+                    );
+
+                if (!actionButton) {
+                    return;
+                }
 
 
-    currentCategory =
-        null;
+                const action =
+                    actionButton.dataset.action;
 
 
-    const clearButton =
-        $("clearSearch");
+                if (action === "favorite") {
 
-    if (clearButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-        clearButton.style.display =
-            currentSearch
-                ? "block"
-                : "";
+                    handleFavorite(
+                        productId
+                    );
 
-    }
-
-
-    renderProducts();
-
-}
+                    return;
+                }
 
 
-/* =========================================================
-   CATEGORY
-========================================================= */
+                if (action === "add") {
 
-function showCategory(
-    category
-) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-    currentCategory =
-        String(category || "");
+                    handleAddToCart(
+                        productId
+                    );
 
-    currentSearch =
-        "";
+                    return;
+                }
 
 
-    const input =
-        $("searchInput") ||
-        $("search");
+                if (action === "details") {
 
-    if (input) {
-        input.value = "";
-    }
+                    event.preventDefault();
 
-
-    const clearButton =
-        $("clearSearch");
-
-    if (clearButton) {
-        clearButton.style.display = "";
-    }
-
-
-    openPage("home");
-
-    renderProducts();
-
-}
-
-
-function showAllProducts() {
-
-    currentCategory =
-        null;
-
-    currentSearch =
-        "";
-
-
-    const input =
-        $("searchInput") ||
-        $("search");
-
-    if (input) {
-        input.value = "";
-    }
-
-
-    renderProducts();
-
-}
-
-
-/* =========================================================
-   FAVORITES
-========================================================= */
-
-function toggleFavorite(
-    productId
-) {
-
-    const result =
-        toggleProductFavorite(
-            productId
+                    openProductModal(
+                        productId
+                    );
+                }
+            }
         );
 
 
-    renderProducts();
+        card.addEventListener(
+            "click",
+            event => {
 
-    renderFavorites();
+                if (
+                    event.target.closest(
+                        "[data-action]"
+                    )
+                ) {
+                    return;
+                }
 
-
-    showToast(
-        result
-            ? "Добавлено в избранное ♥"
-            : "Удалено из избранного"
-    );
-
+                openProductModal(
+                    productId
+                );
+            }
+        );
+    });
 }
 
 
-function renderFavorites() {
+// ============================================================
+// ДОБАВИТЬ В КОРЗИНУ
+// ============================================================
+
+async function handleAddToCart(
+    productId
+) {
+
+    try {
+
+        await addToCart(
+            productId,
+            1
+        );
+
+        updateBadges();
+
+        showToast(
+            "Товар добавлен в корзину",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Не удалось добавить товар",
+            "error"
+        );
+    }
+}
+
+
+// ============================================================
+// ИЗБРАННОЕ
+// ============================================================
+
+function handleFavorite(productId) {
+
+    try {
+
+        const result =
+            toggleFavorite(productId);
+
+        updateBadges();
+
+        renderProducts();
+
+        renderFavorites();
+
+
+        showToast(
+            result.favorite
+                ? "Добавлено в избранное"
+                : "Удалено из избранного",
+            result.favorite
+                ? "success"
+                : "info"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Не удалось изменить избранное",
+            "error"
+        );
+    }
+}
+
+
+// ============================================================
+// ИЗБРАННЫЕ ТОВАРЫ
+// ============================================================
+
+async function renderFavorites() {
 
     const container =
-        $("favoritesProducts");
+        $("#favoritesContainer");
 
     const empty =
-        $("emptyFavorites");
-
+        $("#favoritesEmpty");
 
     if (!container) {
         return;
@@ -724,156 +992,50 @@ function renderFavorites() {
 
 
     const products =
-        getFavoriteProducts();
+        await getFavoriteProducts();
 
 
-    if (!products.length) {
+    if (products.length === 0) {
 
         container.innerHTML = "";
 
-        if (empty) {
-            empty.style.display =
-                "block";
-        }
+        empty?.classList.add(
+            "active"
+        );
 
         return;
-
     }
 
 
-    if (empty) {
-        empty.style.display =
-            "none";
-    }
+    empty?.classList.remove(
+        "active"
+    );
 
 
     container.innerHTML =
         products
-            .map(productCard)
+            .map(renderProductCard)
             .join("");
 
+
+    bindProductEvents();
 }
 
 
-/* =========================================================
-   CART
-========================================================= */
+// ============================================================
+// КОРЗИНА
+// ============================================================
 
-function addToCart(
-    productId
-) {
-
-    const result =
-        addProductToCart(
-            productId,
-            1
-        );
-
-
-    if (!result) {
-
-        showToast(
-            "Не удалось добавить товар"
-        );
-
-        return;
-
-    }
-
-
-    renderCart();
-    updateCartUI();
-
-
-    const product =
-        getProductById(
-            productId
-        );
-
-
-    showToast(
-        product
-            ? `${product.name} добавлен в корзину`
-            : "Товар добавлен в корзину"
-    );
-
-}
-
-
-function increaseCartQuantity(
-    productId
-) {
-
-    cartIncrease(
-        productId
-    );
-
-    renderCart();
-    updateCartUI();
-
-}
-
-
-function decreaseCartQuantity(
-    productId
-) {
-
-    cartDecrease(
-        productId
-    );
-
-    renderCart();
-    updateCartUI();
-
-}
-
-
-function removeProductFromCart(
-    productId
-) {
-
-    cartRemove(
-        productId
-    );
-
-    renderCart();
-    updateCartUI();
-
-    showToast(
-        "Товар удалён из корзины"
-    );
-
-}
-
-
-function clearShopCart() {
-
-    cartClear();
-
-    renderCart();
-    updateCartUI();
-
-    showToast(
-        "Корзина очищена"
-    );
-
-}
-
-
-/* =========================================================
-   RENDER CART
-========================================================= */
-
-function renderCart() {
+async function renderCart() {
 
     const container =
-        $("cartItems");
+        $("#cartContainer");
 
     const empty =
-        $("emptyCart");
+        $("#cartEmpty");
 
     const summary =
-        $("cartSummary");
+        $("#cartSummary");
 
 
     if (!container) {
@@ -882,404 +1044,937 @@ function renderCart() {
 
 
     const items =
-        getCartItems();
+        await getDetailedCart();
 
 
-    if (!items.length) {
+    if (items.length === 0) {
 
         container.innerHTML = "";
 
-        if (empty) {
-            empty.style.display =
-                "block";
-        }
+        empty?.classList.add(
+            "active"
+        );
 
-        if (summary) {
-            summary.style.display =
-                "none";
-        }
+        summary?.classList.remove(
+            "active"
+        );
+
+        updateBadges();
 
         return;
-
     }
 
 
-    if (empty) {
-        empty.style.display =
-            "none";
-    }
+    empty?.classList.remove(
+        "active"
+    );
 
-    if (summary) {
-        summary.style.display =
-            "block";
-    }
+    summary?.classList.add(
+        "active"
+    );
 
 
     container.innerHTML =
         items
-            .map(item => `
-
-                <div
-                    class="cart-item"
-                    data-product-id="${item.id}"
-                >
-
-                    <div class="cart-img">
-
-                        ${renderProductImage(item)}
-
-                    </div>
+            .map(renderCartItem)
+            .join("");
 
 
-                    <div class="cart-content">
+    bindCartEvents();
 
-                        <div class="cart-name">
-                            ${escapeHTML(item.name)}
-                        </div>
+    await updateCartSummary();
 
-                        <div class="cart-price">
-                            ${formatPrice(item.price)}
-                        </div>
+    updateBadges();
+}
 
 
-                        <div class="qty">
+// ============================================================
+// ЭЛЕМЕНТ КОРЗИНЫ
+// ============================================================
 
-                            <button
-                                type="button"
-                                onclick="decreaseCartQuantity(${item.id})"
-                            >
-                                −
-                            </button>
+function renderCartItem(item) {
 
-                            <span>
-                                ${item.quantity}
-                            </span>
+    const image =
+        item.image ||
+        "./assets/products/placeholder.svg";
 
-                            <button
-                                type="button"
-                                onclick="increaseCartQuantity(${item.id})"
-                            >
-                                +
-                            </button>
 
-                        </div>
+    return `
+        <article
+            class="cart-item"
+            data-cart-id="${escapeHTML(
+                String(item.id)
+            )}"
+        >
 
-                    </div>
+            <img
+                class="cart-item-image"
+                src="${escapeHTML(image)}"
+                alt="${escapeHTML(
+                    item.name
+                )}"
+                onerror="this.src='./assets/products/placeholder.svg'"
+            >
 
+
+            <div class="cart-item-info">
+
+                <h3>
+                    ${escapeHTML(
+                        item.name
+                    )}
+                </h3>
+
+                <div class="cart-item-price">
+                    ${formatPrice(
+                        item.price
+                    )}
+                </div>
+
+
+                <div class="cart-item-controls">
 
                     <button
-                        class="delete"
-                        type="button"
-                        onclick="removeProductFromCart(${item.id})"
-                        aria-label="Удалить"
+                        class="quantity-button"
+                        data-cart-action="decrease"
                     >
-                        ×
+                        −
+                    </button>
+
+                    <strong>
+                        ${item.quantity}
+                    </strong>
+
+                    <button
+                        class="quantity-button"
+                        data-cart-action="increase"
+                    >
+                        +
                     </button>
 
                 </div>
 
-            `)
-            .join("");
+            </div>
 
+
+            <div class="cart-item-right">
+
+                <strong class="cart-item-total">
+                    ${formatPrice(
+                        item.subtotal
+                    )}
+                </strong>
+
+                <button
+                    class="cart-remove"
+                    data-cart-action="remove"
+                    aria-label="Удалить"
+                >
+                    ×
+                </button>
+
+            </div>
+
+        </article>
+    `;
+}
+
+
+// ============================================================
+// СОБЫТИЯ КОРЗИНЫ
+// ============================================================
+
+function bindCartEvents() {
+
+    $$(".cart-item").forEach(item => {
+
+        const productId =
+            item.dataset.cartId;
+
+
+        item
+            .querySelectorAll(
+                "[data-cart-action]"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        const action =
+                            button.dataset.cartAction;
+
+
+                        try {
+
+                            if (
+                                action ===
+                                "increase"
+                            ) {
+
+                                await increaseCartItem(
+                                    productId
+                                );
+                            }
+
+
+                            if (
+                                action ===
+                                "decrease"
+                            ) {
+
+                                await decreaseCartItem(
+                                    productId
+                                );
+                            }
+
+
+                            if (
+                                action ===
+                                "remove"
+                            ) {
+
+                                removeFromCart(
+                                    productId
+                                );
+
+                                showToast(
+                                    "Товар удалён",
+                                    "info"
+                                );
+                            }
+
+
+                            await renderCart();
+
+                        } catch (error) {
+
+                            console.error(error);
+
+                            showToast(
+                                error.message ||
+                                "Ошибка корзины",
+                                "error"
+                            );
+                        }
+                    }
+                );
+            }
+        );
+    });
+}
+
+
+// ============================================================
+// ИТОГ КОРЗИНЫ
+// ============================================================
+
+async function updateCartSummary() {
 
     const subtotal =
-        getCartTotal();
-
-
-    const subtotalElement =
-        $("subtotal");
-
-    if (subtotalElement) {
-
-        subtotalElement.textContent =
-            formatPrice(subtotal);
-
-    }
+        await getCartSubtotal();
 
 
     const delivery =
-        $("delivery");
-
-    if (delivery) {
-
-        delivery.textContent =
-            "Бесплатно";
-
-    }
+        calculateDeliveryPrice(
+            subtotal
+        );
 
 
     const total =
-        $("total");
+        subtotal + delivery;
 
-    if (total) {
 
-        total.textContent =
+    if ($("#cartSubtotal")) {
+
+        $("#cartSubtotal").textContent =
             formatPrice(subtotal);
-
     }
 
+
+    if ($("#deliveryPrice")) {
+
+        $("#deliveryPrice").textContent =
+            delivery > 0
+                ? formatPrice(delivery)
+                : "Бесплатно";
+    }
+
+
+    if ($("#cartTotal")) {
+
+        $("#cartTotal").textContent =
+            formatPrice(total);
+    }
+
+
+    state.deliveryPrice =
+        delivery;
 }
 
 
-/* =========================================================
-   CART UI
-========================================================= */
+// ============================================================
+// ДОСТАВКА
+// ============================================================
 
-function updateCartUI() {
+function calculateDeliveryPrice(
+    subtotal
+) {
 
-    const count =
-        getCartCount();
+    const freeDeliveryFrom = 200;
 
-
-    const elements = [
-
-        $("cartCount"),
-        $("headerCartCount")
-
-    ];
+    const standardDelivery = 15;
 
 
-    elements.forEach(element => {
-
-        if (!element) {
-            return;
-        }
+    if (subtotal <= 0) {
+        return 0;
+    }
 
 
-        element.textContent =
-            count;
+    if (
+        subtotal >=
+        freeDeliveryFrom
+    ) {
+        return 0;
+    }
 
 
-        element.style.display =
-            count > 0
-                ? "flex"
-                : "none";
-
-    });
-
+    return standardDelivery;
 }
 
 
-/* =========================================================
-   CHECKOUT
-========================================================= */
+// ============================================================
+// CHECKOUT
+// ============================================================
 
-function openCheckout() {
+async function openCheckout() {
 
-    if (getCartCount() <= 0) {
+    if (isCartEmpty()) {
 
         showToast(
-            "Сначала добавьте товары в корзину"
+            "Корзина пуста",
+            "warning"
         );
 
         return;
-
     }
 
 
-    openPage(
-        "checkout"
+    showPage("checkout");
+
+    renderCheckoutTotal();
+
+    updateCheckoutLocation();
+}
+
+
+// ============================================================
+// ИТОГ CHECKOUT
+// ============================================================
+
+async function renderCheckoutTotal() {
+
+    const subtotal =
+        await getCartSubtotal();
+
+
+    const delivery =
+        calculateDeliveryPrice(
+            subtotal
+        );
+
+
+    const total =
+        subtotal + delivery;
+
+
+    if ($("#checkoutTotal")) {
+
+        $("#checkoutTotal").textContent =
+            formatPrice(total);
+    }
+
+
+    state.deliveryPrice =
+        delivery;
+}
+
+
+// ============================================================
+// ВОССТАНОВИТЬ CHECKOUT
+// ============================================================
+
+function restoreCheckoutData() {
+
+    const savedName =
+        localStorage.getItem(
+            "shohin_checkout_name"
+        );
+
+    const savedPhone =
+        localStorage.getItem(
+            "shohin_checkout_phone"
+        );
+
+    const savedAddress =
+        localStorage.getItem(
+            "shohin_checkout_address"
+        );
+
+    const savedComment =
+        localStorage.getItem(
+            "shohin_checkout_comment"
+        );
+
+
+    if ($("#customerName")) {
+        $("#customerName").value =
+            savedName || "";
+    }
+
+    if ($("#customerPhone")) {
+        $("#customerPhone").value =
+            savedPhone || "";
+    }
+
+    if ($("#address")) {
+        $("#address").value =
+            savedAddress || "";
+    }
+
+    if ($("#comment")) {
+        $("#comment").value =
+            savedComment || "";
+    }
+
+
+    updateCheckoutLocation();
+}
+
+
+// ============================================================
+// СОХРАНЕНИЕ CHECKOUT
+// ============================================================
+
+function saveCheckoutDraft() {
+
+    if ($("#customerName")) {
+
+        localStorage.setItem(
+            "shohin_checkout_name",
+            $("#customerName").value
+        );
+    }
+
+
+    if ($("#customerPhone")) {
+
+        localStorage.setItem(
+            "shohin_checkout_phone",
+            $("#customerPhone").value
+        );
+    }
+
+
+    if ($("#address")) {
+
+        localStorage.setItem(
+            "shohin_checkout_address",
+            $("#address").value
+        );
+    }
+
+
+    if ($("#comment")) {
+
+        localStorage.setItem(
+            "shohin_checkout_comment",
+            $("#comment").value
+        );
+    }
+}
+
+
+// ============================================================
+// МЕСТО ДОСТАВКИ
+// ============================================================
+
+function updateCheckoutLocation() {
+
+    const location =
+        getSelectedLocation();
+
+
+    if (!location) {
+
+        if ($("#selectedLocationText")) {
+
+            $("#selectedLocationText").textContent =
+                "Место доставки не выбрано";
+        }
+
+        return;
+    }
+
+
+    if ($("#selectedLocationText")) {
+
+        $("#selectedLocationText").textContent =
+            getLocationDisplayText(
+                location
+            );
+    }
+
+
+    if ($("#address") &&
+        location.address) {
+
+        $("#address").value =
+            location.address;
+    }
+}
+
+
+// ============================================================
+// КАРТА
+// ============================================================
+
+function openMap() {
+
+    const modal =
+        $("#mapModal");
+
+    if (!modal) {
+        return;
+    }
+
+
+    modal.classList.add(
+        "active"
     );
 
 
-    updateCheckoutTotal();
+    const map =
+        $("#deliveryMap");
 
+    const pin =
+        $("#mapPin");
+
+
+    if (!state.mapInitialized) {
+
+        initDeliveryMap(
+            map,
+            pin,
+            location => {
+
+                if ($("#selectedLocationText")) {
+
+                    $("#selectedLocationText").textContent =
+                        getLocationDisplayText(
+                            location
+                        );
+                }
+
+            }
+        );
+
+        state.mapInitialized =
+            true;
+    }
+
+
+    updateMapPin();
+
+    updateMapAddress();
 }
 
 
-function updateCheckoutTotal() {
+function updateMapPin() {
 
-    const total =
-        getCartTotal();
+    const location =
+        getSelectedLocation();
+
+    const pin =
+        $("#mapPin");
+
+    const map =
+        $("#deliveryMap");
 
 
-    const subtotal =
-        $("checkoutSubtotal");
-
-    if (subtotal) {
-
-        subtotal.textContent =
-            formatPrice(total);
-
+    if (
+        !location ||
+        !pin ||
+        !map
+    ) {
+        return;
     }
 
 
-    const checkoutTotal =
-        $("checkoutTotal");
+    const position =
+        coordinatesToMapPosition(
+            location.lat,
+            location.lng
+        );
 
-    if (checkoutTotal) {
 
-        checkoutTotal.textContent =
-            formatPrice(total);
+    pin.style.left =
+        `${position.x}%`;
 
-    }
+    pin.style.top =
+        `${position.y}%`;
 
+    pin.classList.add(
+        "map-pin-visible"
+    );
 }
 
 
-/* =========================================================
-   SUBMIT ORDER
-========================================================= */
+function updateMapAddress() {
 
-function submitOrder(
-    event
-) {
+    const location =
+        getSelectedLocation();
 
-    if (event) {
 
-        event.preventDefault();
+    if ($("#mapAddress")) {
 
+        $("#mapAddress").value =
+            location?.address || "";
+    }
+}
+
+
+// ============================================================
+// ПОДТВЕРДИТЬ КАРТУ
+// ============================================================
+
+function confirmMap() {
+
+    const address =
+        $("#mapAddress")
+            ?.value
+            .trim() || "";
+
+
+    const location =
+        getSelectedLocation();
+
+
+    if (!location) {
+
+        showToast(
+            "Выберите место на карте",
+            "warning"
+        );
+
+        return;
     }
 
+
+    setLocationAddress(
+        address
+    );
+
+
+    if ($("#address")) {
+
+        $("#address").value =
+            address;
+    }
+
+
+    updateCheckoutLocation();
+
+    saveCheckoutDraft();
+
+    closeMap();
+
+
+    showToast(
+        "Место доставки сохранено",
+        "success"
+    );
+}
+
+
+// ============================================================
+// ЗАКРЫТЬ КАРТУ
+// ============================================================
+
+function closeMap() {
+
+    $("#mapModal")
+        ?.classList.remove(
+            "active"
+        );
+}
+
+
+// ============================================================
+// РАЗМЕЩЕНИЕ ЗАКАЗА
+// ============================================================
+
+async function placeOrder() {
 
     const name =
-        $("customerName")
+        $("#customerName")
             ?.value
             .trim() || "";
 
 
     const phone =
-        $("customerPhone")
+        $("#customerPhone")
             ?.value
             .trim() || "";
 
 
     const address =
-        (
-            $("address") ||
-            $("deliveryAddress")
-        )
+        $("#address")
             ?.value
             .trim() || "";
 
 
     const comment =
-        (
-            $("comment") ||
-            $("orderComment")
-        )
+        $("#comment")
             ?.value
             .trim() || "";
 
 
     const payment =
-        $("payment")
-            ?.value || "cash";
+        document.querySelector(
+            'input[name="payment"]:checked'
+        )?.value || "cash";
 
 
-    if (!name) {
+    // --------------------------------------------------------
+    // Проверка имени
+    // --------------------------------------------------------
+
+    if (name.length < 2) {
 
         showToast(
-            "Введите имя"
+            "Введите имя",
+            "warning"
         );
 
-        $("customerName")?.focus();
+        $("#customerName")
+            ?.focus();
 
-        return false;
-
+        return;
     }
 
 
-    if (!phone) {
+    // --------------------------------------------------------
+    // Проверка телефона
+    // --------------------------------------------------------
 
-        showToast(
-            "Введите номер телефона"
+    const phoneDigits =
+        phone.replace(
+            /\D/g,
+            ""
         );
 
-        $("customerPhone")?.focus();
 
-        return false;
+    if (
+        phoneDigits.length < 9
+    ) {
 
+        showToast(
+            "Введите корректный номер телефона",
+            "warning"
+        );
+
+        $("#customerPhone")
+            ?.focus();
+
+        return;
     }
 
 
-    if (!address) {
+    // --------------------------------------------------------
+    // Проверка адреса
+    // --------------------------------------------------------
+
+    if (address.length < 3) {
 
         showToast(
-            "Укажите адрес доставки"
+            "Укажите адрес доставки",
+            "warning"
         );
 
-        (
-            $("address") ||
-            $("deliveryAddress")
-        )?.focus();
+        $("#address")
+            ?.focus();
 
-        return false;
-
+        return;
     }
 
+
+    // --------------------------------------------------------
+    // Проверка точки карты
+    // --------------------------------------------------------
 
     const location =
-        getDeliveryLocation();
+        getSelectedLocation();
 
 
-    const order =
-        createOrder({
-
-            name,
-            phone,
-            address,
-            comment,
-            payment,
-
-            lat:
-                location.lat,
-
-            lng:
-                location.lng
-
-        });
-
-
-    if (!order) {
+    if (!location) {
 
         showToast(
-            "Корзина пуста"
+            "Выберите точку доставки на карте",
+            "warning"
         );
 
-        return false;
+        openMap();
 
+        return;
     }
 
 
-    renderCart();
-    updateCartUI();
-    renderOrders();
+    try {
+
+        const items =
+            await getDetailedCart();
 
 
-    showToast(
-        "Заказ успешно оформлен ✓"
-    );
+        if (items.length === 0) {
 
-
-    setTimeout(
-        () => {
-
-            openPage(
-                "orders"
+            showToast(
+                "Корзина пуста",
+                "warning"
             );
 
-        },
-        500
-    );
+            return;
+        }
 
 
-    return true;
+        const subtotal =
+            await getCartSubtotal();
 
+
+        const deliveryPrice =
+            calculateDeliveryPrice(
+                subtotal
+            );
+
+
+        const total =
+            subtotal +
+            deliveryPrice;
+
+
+        const order =
+            createOrder({
+
+                customer: {
+                    name,
+                    phone
+                },
+
+                items,
+
+                subtotal,
+
+                deliveryPrice,
+
+                total,
+
+                paymentMethod:
+                    payment,
+
+                location: {
+                    ...location,
+                    address
+                },
+
+                comment
+            });
+
+
+        // ----------------------------------------------------
+        // Очистка корзины
+        // ----------------------------------------------------
+
+        emptyCart();
+
+
+        // ----------------------------------------------------
+        // Обновление интерфейса
+        // ----------------------------------------------------
+
+        updateBadges();
+
+        renderCart();
+
+        renderOrders();
+
+
+        // ----------------------------------------------------
+        // Очистка checkout
+        // ----------------------------------------------------
+
+        clearCheckoutDraft();
+
+
+        // ----------------------------------------------------
+        // Успешный заказ
+        // ----------------------------------------------------
+
+        showOrderSuccess(
+            order.id
+        );
+
+    } catch (error) {
+
+        console.error(
+            "ORDER ERROR:",
+            error
+        );
+
+        showToast(
+            error.message ||
+            "Не удалось оформить заказ",
+            "error"
+        );
+    }
 }
 
 
-/* =========================================================
-   ORDERS
-========================================================= */
+// ============================================================
+// ОЧИСТИТЬ CHECKOUT DRAFT
+// ============================================================
+
+function clearCheckoutDraft() {
+
+    localStorage.removeItem(
+        "shohin_checkout_name"
+    );
+
+    localStorage.removeItem(
+        "shohin_checkout_phone"
+    );
+
+    localStorage.removeItem(
+        "shohin_checkout_address"
+    );
+
+    localStorage.removeItem(
+        "shohin_checkout_comment"
+    );
+}
+
+
+// ============================================================
+// ЗАКАЗЫ
+// ============================================================
 
 function renderOrders() {
 
     const container =
-        $("ordersList");
+        $("#ordersContainer");
 
     const empty =
-        $("emptyOrders");
+        $("#ordersEmpty");
 
 
     if (!container) {
@@ -1288,672 +1983,1030 @@ function renderOrders() {
 
 
     const orders =
-        getCurrentOrders();
+        getAllOrders();
 
 
-    if (!orders.length) {
+    if (orders.length === 0) {
 
         container.innerHTML = "";
 
-        if (empty) {
-            empty.style.display =
-                "block";
-        }
+        empty?.classList.add(
+            "active"
+        );
 
         return;
-
     }
 
 
-    if (empty) {
-        empty.style.display =
-            "none";
-    }
+    empty?.classList.remove(
+        "active"
+    );
 
 
     container.innerHTML =
         orders
-            .map(orderCard)
+            .map(renderOrder)
             .join("");
 
+
+    bindOrderEvents();
 }
 
 
-function getOrderStatusData(
-    order
-) {
+// ============================================================
+// КАРТОЧКА ЗАКАЗА
+// ============================================================
 
-    const status =
-        String(
+function renderOrder(order) {
+
+    const statusClass =
+        `status-${String(
             order.status || "new"
-        );
+        ).replace(
+            "_",
+            "-"
+        )}`;
 
 
-    if (
-        status === "completed"
-    ) {
-
-        return {
-            text: "Доставлен",
-            step: 4
-        };
-
-    }
-
-
-    if (
-        status === "delivering"
-    ) {
-
-        return {
-            text: "Доставляется",
-            step: 3
-        };
-
-    }
-
-
-    if (
-        status === "courier"
-    ) {
-
-        return {
-            text: "Курьер получил",
-            step: 2
-        };
-
-    }
-
-
-    if (
-        status === "cancelled"
-    ) {
-
-        return {
-            text: "Отменён",
-            step: 0
-        };
-
-    }
-
-
-    return {
-        text:
-            order.statusText ||
-            "Собирается",
-        step: 1
-    };
-
-}
-
-
-function orderCard(
-    order
-) {
-
-    const status =
-        getOrderStatusData(
-            order
-        );
-
-
-    const steps = [
-
-        "Заказ принят",
-        "Собирается",
-        "Курьер",
-        "Доставка",
-        "Получен"
-
-    ];
+    const itemsCount =
+        Array.isArray(order.items)
+            ? order.items.reduce(
+                (sum, item) =>
+                    sum +
+                    Number(
+                        item.quantity || 0
+                    ),
+                0
+            )
+            : 0;
 
 
     return `
+        <article
+            class="order-card"
+            data-order-id="${escapeHTML(
+                String(order.id)
+            )}"
+        >
 
-        <article class="order-card">
-
-            <div class="order-head">
+            <div class="order-header">
 
                 <div>
+                    <strong>
+                        Заказ ${escapeHTML(
+                            String(order.id)
+                        )}
+                    </strong>
 
-                    <div class="order-number">
-                        ${escapeHTML(order.id)}
-                    </div>
-
-                    <div
-                        style="
-                            font-size:11px;
-                            color:var(--muted);
-                            margin-top:4px;
-                        "
-                    >
-                        ${formatDate(order.date)}
-                    </div>
-
+                    <span class="order-date">
+                        ${formatOrderDate(
+                            order.createdAt
+                        )}
+                    </span>
                 </div>
 
 
-                <div class="status">
-                    ${escapeHTML(status.text)}
+                <span
+                    class="order-status ${statusClass}"
+                >
+                    ${escapeHTML(
+                        getOrderStatusLabel(
+                            order.status
+                        )
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="order-info">
+
+                <div>
+                    Товаров:
+                    <strong>
+                        ${itemsCount}
+                    </strong>
+                </div>
+
+                <div>
+                    Оплата:
+                    <strong>
+                        ${escapeHTML(
+                            getPaymentMethodLabel(
+                                order.paymentMethod
+                            )
+                        )}
+                    </strong>
+                </div>
+
+                <div>
+                    Сумма:
+                    <strong>
+                        ${formatPrice(
+                            order.total
+                        )}
+                    </strong>
                 </div>
 
             </div>
 
 
-            <div class="progress">
+            <div class="order-actions">
 
-                ${steps
-                    .map(
-                        (step, index) => `
-                            <div
-                                class="step ${
-                                    index <
-                                    status.step
-                                        ? "done"
-                                        : ""
-                                }"
-                            >
+                <button
+                    class="secondary-button"
+                    data-order-action="details"
+                >
+                    Подробнее
+                </button>
 
-                                <div class="step-dot">
-                                    ${
-                                        index <
-                                        status.step
-                                            ? "✓"
-                                            : ""
-                                    }
-                                </div>
-
-                                <span>
-                                    ${escapeHTML(step)}
-                                </span>
-
-                            </div>
-                        `
-                    )
-                    .join("")
-                }
-
-            </div>
-
-
-            <div
-                style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                    margin-top:16px;
-                "
-            >
-
-                <strong>
-                    ${formatPrice(order.total)}
-                </strong>
-
-
-                ${
-                    order.status !== "completed" &&
-                    order.status !== "cancelled"
-                    ?
-                    `
-                        <button
-                            class="confirm-btn"
-                            type="button"
-                            onclick="confirmReceived('${escapeHTML(order.id)}')"
-                        >
-                            Получил ✓
-                        </button>
-                    `
-                    :
-                    ""
-                }
+                <button
+                    class="primary-button"
+                    data-order-action="repeat"
+                >
+                    Повторить
+                </button>
 
             </div>
 
         </article>
-
     `;
-
 }
 
 
-function confirmReceived(
+// ============================================================
+// СОБЫТИЯ ЗАКАЗОВ
+// ============================================================
+
+function bindOrderEvents() {
+
+    $$(".order-card").forEach(card => {
+
+        const orderId =
+            card.dataset.orderId;
+
+
+        card
+            .querySelectorAll(
+                "[data-order-action]"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const action =
+                            button.dataset.orderAction;
+
+
+                        if (
+                            action ===
+                            "details"
+                        ) {
+
+                            openOrderDetails(
+                                orderId
+                            );
+                        }
+
+
+                        if (
+                            action ===
+                            "repeat"
+                        ) {
+
+                            repeatOrder(
+                                orderId
+                            );
+                        }
+                    }
+                );
+            }
+        );
+    });
+}
+
+
+// ============================================================
+// ПОДРОБНОСТИ ЗАКАЗА
+// ============================================================
+
+function openOrderDetails(orderId) {
+
+    const order =
+        getOrderById(orderId);
+
+
+    if (!order) {
+
+        showToast(
+            "Заказ не найден",
+            "error"
+        );
+
+        return;
+    }
+
+
+    let itemsHTML = "";
+
+
+    if (
+        Array.isArray(
+            order.items
+        )
+    ) {
+
+        itemsHTML =
+            order.items
+                .map(item => `
+                    <div class="order-detail-item">
+
+                        <span>
+                            ${escapeHTML(
+                                item.name
+                            )}
+                            ×
+                            ${item.quantity}
+                        </span>
+
+                        <strong>
+                            ${formatPrice(
+                                item.subtotal
+                            )}
+                        </strong>
+
+                    </div>
+                `)
+                .join("");
+    }
+
+
+    const content = `
+        <div class="order-details">
+
+            <h3>
+                Заказ ${escapeHTML(
+                    String(order.id)
+                )}
+            </h3>
+
+            <p>
+                ${formatOrderDate(
+                    order.createdAt
+                )}
+            </p>
+
+
+            <div class="order-details-list">
+                ${itemsHTML}
+            </div>
+
+
+            <div class="order-detail-total">
+                <span>Товары</span>
+                <strong>
+                    ${formatPrice(
+                        order.subtotal
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="order-detail-total">
+                <span>Доставка</span>
+                <strong>
+                    ${
+                        order.deliveryPrice > 0
+                            ? formatPrice(
+                                order.deliveryPrice
+                            )
+                            : "Бесплатно"
+                    }
+                </strong>
+            </div>
+
+
+            <div class="order-detail-total grand">
+                <span>Итого</span>
+                <strong>
+                    ${formatPrice(
+                        order.total
+                    )}
+                </strong>
+            </div>
+
+
+            <div class="order-detail-customer">
+
+                <strong>
+                    Получатель
+                </strong>
+
+                <p>
+                    ${escapeHTML(
+                        order.customer?.name ||
+                        ""
+                    )}
+                </p>
+
+                <p>
+                    ${escapeHTML(
+                        order.customer?.phone ||
+                        ""
+                    )}
+                </p>
+
+                <p>
+                    ${escapeHTML(
+                        order.location?.address ||
+                        ""
+                    )}
+                </p>
+
+            </div>
+
+        </div>
+    `;
+
+
+    openSimpleModal(
+        "Детали заказа",
+        content
+    );
+}
+
+
+// ============================================================
+// ПОВТОР ЗАКАЗА
+// ============================================================
+
+async function repeatOrder(orderId) {
+
+    const order =
+        getOrderById(orderId);
+
+
+    if (!order) {
+
+        showToast(
+            "Заказ не найден",
+            "error"
+        );
+
+        return;
+    }
+
+
+    if (
+        !Array.isArray(
+            order.items
+        )
+    ) {
+        return;
+    }
+
+
+    let added = 0;
+
+
+    for (const item of order.items) {
+
+        try {
+
+            await addToCart(
+                item.id,
+                item.quantity
+            );
+
+            added++;
+
+        } catch (error) {
+
+            console.warn(
+                "Repeat order item error:",
+                error
+            );
+        }
+    }
+
+
+    updateBadges();
+
+    await renderCart();
+
+
+    if (added > 0) {
+
+        showToast(
+            "Товары добавлены в корзину",
+            "success"
+        );
+
+        showPage("cart");
+
+    } else {
+
+        showToast(
+            "Товары из заказа недоступны",
+            "warning"
+        );
+    }
+}
+
+
+// ============================================================
+// PRODUCT MODAL
+// ============================================================
+
+async function openProductModal(
+    productId
+) {
+
+    const product =
+        await getProductById(
+            productId
+        );
+
+
+    if (!product) {
+        return;
+    }
+
+
+    state.currentProduct =
+        product;
+
+
+    const modal =
+        $("#productModal");
+
+    const content =
+        $("#productModalContent");
+
+
+    if (!modal || !content) {
+        return;
+    }
+
+
+    const favorite =
+        isFavorite(
+            product.id
+        );
+
+
+    const available =
+        isProductAvailable(
+            product
+        );
+
+
+    const image =
+        product.image ||
+        "./assets/products/placeholder.svg";
+
+
+    content.innerHTML = `
+
+        <div class="product-modal-image-wrap">
+
+            <img
+                src="${escapeHTML(image)}"
+                alt="${escapeHTML(
+                    product.name
+                )}"
+                class="product-modal-image"
+                onerror="this.src='./assets/products/placeholder.svg'"
+            >
+
+        </div>
+
+
+        <div class="product-modal-category">
+            ${escapeHTML(
+                product.category || ""
+            )}
+        </div>
+
+
+        <h2>
+            ${escapeHTML(
+                product.name
+            )}
+        </h2>
+
+
+        <p class="product-modal-description">
+            ${escapeHTML(
+                product.description || ""
+            )}
+        </p>
+
+
+        <div class="product-modal-price">
+            ${formatPrice(
+                product.price
+            )}
+
+            <span>
+                / ${escapeHTML(
+                    product.unit || "шт."
+                )}
+            </span>
+        </div>
+
+
+        <div class="product-modal-actions">
+
+            <button
+                class="secondary-button"
+                id="modalFavoriteButton"
+            >
+                ${favorite
+                    ? "♥ В избранном"
+                    : "♡ В избранное"
+                }
+            </button>
+
+
+            ${
+                available
+                    ? `
+                        <button
+                            class="primary-button"
+                            id="modalAddCartButton"
+                        >
+                            Добавить в корзину
+                        </button>
+                    `
+                    : `
+                        <button
+                            class="primary-button disabled"
+                            disabled
+                        >
+                            Нет в наличии
+                        </button>
+                    `
+            }
+
+        </div>
+    `;
+
+
+    $("#modalFavoriteButton")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                handleFavorite(
+                    product.id
+                );
+
+                openProductModal(
+                    product.id
+                );
+            }
+        );
+
+
+    $("#modalAddCartButton")
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                await handleAddToCart(
+                    product.id
+                );
+
+                closeProductModal();
+            }
+        );
+
+
+    modal.classList.add(
+        "active"
+    );
+}
+
+
+// ============================================================
+// ЗАКРЫТЬ PRODUCT MODAL
+// ============================================================
+
+function closeProductModal() {
+
+    $("#productModal")
+        ?.classList.remove(
+            "active"
+        );
+
+    state.currentProduct =
+        null;
+}
+
+
+// ============================================================
+// MENU
+// ============================================================
+
+function openMenu() {
+
+    $("#menuModal")
+        ?.classList.add(
+            "active"
+        );
+}
+
+
+function closeMenu() {
+
+    $("#menuModal")
+        ?.classList.remove(
+            "active"
+        );
+}
+
+
+// ============================================================
+// SUCCESS
+// ============================================================
+
+function showOrderSuccess(
     orderId
 ) {
 
-    const result =
-        confirmOrderReceived(
-            orderId
-        );
+    if ($("#successOrderId")) {
 
-
-    if (result) {
-
-        renderOrders();
-
-        showToast(
-            "Заказ отмечен как полученный ✓"
-        );
-
+        $("#successOrderId").textContent =
+            orderId;
     }
 
+
+    $("#orderSuccessModal")
+        ?.classList.add(
+            "active"
+        );
 }
 
 
-/* =========================================================
-   REPEAT ORDER
-========================================================= */
+function closeSuccessModal() {
 
-function repeatLastOrder() {
-
-    const result =
-        repeatLastOrderModule();
-
-
-    if (!result) {
-
-        showToast(
-            "У вас ещё нет заказов"
+    $("#orderSuccessModal")
+        ?.classList.remove(
+            "active"
         );
+}
 
+
+// ============================================================
+// BADGES
+// ============================================================
+
+function updateBadges() {
+
+    const cartCount =
+        getCartCount();
+
+
+    const favoritesCount =
+        getFavoritesCount();
+
+
+    setBadge(
+        "#cartBadge",
+        cartCount
+    );
+
+    setBadge(
+        "#bottomCartBadge",
+        cartCount
+    );
+
+    setBadge(
+        "#favoritesBadge",
+        favoritesCount
+    );
+}
+
+
+function setBadge(
+    selector,
+    count
+) {
+
+    const badge =
+        $(selector);
+
+
+    if (!badge) {
         return;
-
     }
 
 
-    renderCart();
-    updateCartUI();
+    badge.textContent =
+        String(count);
 
-    closeSHMenu();
 
-    showToast(
-        "Товары прошлого заказа добавлены"
+    badge.classList.toggle(
+        "visible",
+        count > 0
     );
+}
 
 
-    setTimeout(
-        () => {
+// ============================================================
+// SEARCH
+// ============================================================
 
-            openPage(
-                "cart"
+function handleSearch(event) {
+
+    state.currentSearch =
+        event.target.value;
+
+
+    if (
+        state.currentSearch.trim()
+    ) {
+
+        state.currentCategory =
+            "all";
+
+
+        $$(".category-chip")
+            .forEach(button =>
+                button.classList.toggle(
+                    "active",
+                    button.dataset.category ===
+                    "all"
+                )
             );
-
-        },
-        400
-    );
-
-}
-
-
-/* =========================================================
-   MAP
-   ВАЖНО:
-   Здесь НЕТ автоматического navigator.geolocation
-   при запуске приложения.
-========================================================= */
-
-function openDeliveryMap() {
-
-    const modal =
-        $("mapModal");
-
-    if (!modal) {
-        return;
     }
 
-    modal.classList.add(
-        "show"
-    );
-
-}
-
-
-function closeDeliveryMap() {
-
-    const modal =
-        $("mapModal");
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.remove(
-        "show"
-    );
-
-}
-
-
-function confirmDeliveryLocation() {
-
-    const addressInput =
-        $("address") ||
-        $("deliveryAddress");
-
-
-    const mapAddress =
-        $("mapAddress");
-
-
-    const address =
-        mapAddress?.value.trim() ||
-        "Точка доставки выбрана на карте";
-
-
-    setDeliveryAddress(
-        address
-    );
-
-
-    if (addressInput) {
-
-        addressInput.value =
-            address;
-
-    }
-
-
-    closeDeliveryMap();
-
-
-    showToast(
-        "Точка доставки сохранена 📍"
-    );
-
-}
-
-
-/* =========================================================
-   SH MENU
-========================================================= */
-
-function toggleSHMenu() {
-
-    const menu =
-        $("shMenu");
-
-    const button =
-        $("shButton");
-
-
-    if (!menu) {
-        return;
-    }
-
-
-    const opened =
-        menu.classList.toggle(
-            "open"
-        );
-
-
-    if (button) {
-
-        button.classList.toggle(
-            "open",
-            opened
-        );
-
-    }
-
-}
-
-
-function closeSHMenu() {
-
-    const menu =
-        $("shMenu");
-
-    const button =
-        $("shButton");
-
-
-    if (menu) {
-
-        menu.classList.remove(
-            "open"
-        );
-
-    }
-
-
-    if (button) {
-
-        button.classList.remove(
-            "open"
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   WHATSAPP
-   Номер специально НЕ указан.
-========================================================= */
-
-function openWhatsApp() {
-
-    showToast(
-        "WhatsApp будет подключён после добавления официального номера магазина"
-    );
-
-}
-
-
-/* =========================================================
-   REFRESH
-========================================================= */
-
-function refreshApp() {
 
     renderProducts();
-    renderFavorites();
-    renderCart();
-    renderOrders();
-    updateCartUI();
-
 }
 
 
-/* =========================================================
-   GLOBAL API
-========================================================= */
+function clearSearch() {
 
-window.SHOHIN = {
+    state.currentSearch =
+        "";
 
-    openPage,
 
-    showToast,
+    if ($("#search")) {
+        $("#search").value = "";
+    }
 
-    formatPrice,
 
-    search:
-        performSearch,
+    renderProducts();
+}
 
-    category:
-        showCategory,
 
-    showCategory,
+// ============================================================
+// SHARE
+// ============================================================
 
-    showAll:
-        showAllProducts,
+async function shareShop() {
 
-    showAllProducts,
+    const shareData = {
+        title: "SHOHIN MARKET",
+        text: "Онлайн-магазин SHOHIN MARKET"
+    };
 
-    addToCart,
 
-    increaseCartQuantity,
-
-    decreaseCartQuantity,
-
-    removeProductFromCart,
-
-    clearCart:
-        clearShopCart,
-
-    toggleFavorite,
-
-    renderProducts,
-
-    renderFavorites,
-
-    renderCart,
-
-    renderOrders,
-
-    updateCartUI,
-
-    openCheckout,
-
-    submitOrder,
-
-    confirmReceived,
-
-    repeatLastOrder,
-
-    openDeliveryMap,
-
-    closeDeliveryMap,
-
-    confirmDeliveryLocation,
-
-    toggleSHMenu,
-
-    openWhatsApp,
-
-    refresh:
-
-        refreshApp,
-
-    getDeliveryLocation
-
-};
-
-
-/* =========================================================
-   GLOBAL COMPATIBILITY FUNCTIONS
-========================================================= */
-
-window.renderProducts =
-    renderProducts;
-
-window.renderFavorites =
-    renderFavorites;
-
-window.renderCart =
-    renderCart;
-
-window.renderOrders =
-    renderOrders;
-
-window.updateCartUI =
-    updateCartUI;
-
-window.performSearch =
-    performSearch;
-
-window.searchProducts =
-    performSearch;
-
-window.showCategory =
-    showCategory;
-
-window.filterCategory =
-    showCategory;
-
-window.showAllProducts =
-    showAllProducts;
-
-window.addToCart =
-    addToCart;
-
-window.toggleFavorite =
-    toggleFavorite;
-
-window.increaseCartQuantity =
-    increaseCartQuantity;
-
-window.decreaseCartQuantity =
-    decreaseCartQuantity;
-
-window.removeProductFromCart =
-    removeProductFromCart;
-
-window.clearShopCart =
-    clearShopCart;
-
-window.openCheckout =
-    openCheckout;
-
-window.submitOrder =
-    submitOrder;
-
-window.confirmReceived =
-    confirmReceived;
-
-window.repeatLastOrder =
-    repeatLastOrder;
-
-window.openDeliveryMap =
-    openDeliveryMap;
-
-window.closeDeliveryMap =
-    closeDeliveryMap;
-
-window.confirmDeliveryLocation =
-    confirmDeliveryLocation;
-
-window.toggleSHMenu =
-    toggleSHMenu;
-
-window.openWhatsApp =
-    openWhatsApp;
-
-window.refreshApp =
-    refreshApp;
-
-
-/* =========================================================
-   CLOSE MODAL WHEN CLICKING BACKDROP
-========================================================= */
-
-document.addEventListener(
-    "click",
-    event => {
-
-        const modal =
-            $("mapModal");
+    try {
 
         if (
-            modal &&
-            event.target === modal
+            navigator.share
         ) {
 
-            closeDeliveryMap();
+            await navigator.share(
+                shareData
+            );
 
+            return;
         }
 
+
+        await navigator.clipboard.writeText(
+            window.location.href
+        );
+
+
+        showToast(
+            "Ссылка скопирована",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Share cancelled:",
+            error
+        );
     }
-);
+}
 
 
-/* =========================================================
-   ESC KEY
-========================================================= */
+// ============================================================
+// SIMPLE MODAL
+// ============================================================
 
-document.addEventListener(
-    "keydown",
-    event => {
+function openSimpleModal(
+    title,
+    content
+) {
 
-        if (
-            event.key === "Escape"
-        ) {
+    const modal =
+        $("#productModal");
 
-            closeDeliveryMap();
-            closeSHMenu();
+    const container =
+        $("#productModalContent");
 
+
+    if (!modal || !container) {
+        return;
+    }
+
+
+    container.innerHTML = `
+        <div class="simple-modal-content">
+
+            <h2>
+                ${escapeHTML(title)}
+            </h2>
+
+            ${content}
+
+        </div>
+    `;
+
+
+    modal.classList.add(
+        "active"
+    );
+}
+
+
+// ============================================================
+// TOAST
+// ============================================================
+
+let toastTimer = null;
+
+
+function showToast(
+    message,
+    type = "info"
+) {
+
+    const toast =
+        $("#toast");
+
+    const icon =
+        $("#toastIcon");
+
+    const text =
+        $("#toastMessage");
+
+
+    if (!toast) {
+        return;
+    }
+
+
+    if (text) {
+        text.textContent =
+            message;
+    }
+
+
+    if (icon) {
+
+        const icons = {
+            success: "✓",
+            error: "!",
+            warning: "⚠",
+            info: "i"
+        };
+
+
+        icon.textContent =
+            icons[type] || "i";
+    }
+
+
+    toast.className =
+        `toast ${type} active`;
+
+
+    clearTimeout(
+        toastTimer
+    );
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "active"
+                );
+
+            },
+            3000
+        );
+}
+
+
+// ============================================================
+// LOADER
+// ============================================================
+
+function showLoader() {
+
+    $("#appLoader")
+        ?.classList.add(
+            "active"
+        );
+}
+
+
+function hideLoader() {
+
+    $("#appLoader")
+        ?.classList.remove(
+            "active"
+        );
+}
+
+
+// ============================================================
+// HTML ESCAPE
+// ============================================================
+
+function escapeHTML(value) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
+
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+
+if (
+    "serviceWorker" in navigator
+) {
+
+    window.addEventListener(
+        "load",
+        () => {
+
+            navigator.serviceWorker
+                .register("./sw.js")
+                .then(
+                    registration => {
+
+                        console.log(
+                            "SHOHIN MARKET SW:",
+                            registration.scope
+                        );
+                    }
+                )
+                .catch(
+                    error => {
+
+                        console.warn(
+                            "Service Worker error:",
+                            error
+                        );
+                    }
+                );
         }
-
-    }
-);
+    );
+}
