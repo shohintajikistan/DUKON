@@ -1,43 +1,43 @@
 {
-  "name": "SHOHIN MARKET",
-  "short_name": "SHOHIN",
-  "description": "SHOHIN MARKET — онлайн-магазин продуктов и товаров с доставкой.",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0b3d2e",
-  "theme_color": "#126b4f",
-  "lang": "ru",
-  "dir": "ltr",
-  "categories": [
-    "shopping",
-    "food"
-  ],
-  "icons": [
-    {
-      "src": "./assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./assets/icons/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "./assets/icons/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ]
+    "name": "SHOHIN MARKET",
+    "short_name": "SHOHIN",
+    "description": "SHOHIN MARKET — онлайн-магазин продуктов с доставкой.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0b3d2e",
+    "theme_color": "#0b3d2e",
+    "lang": "ru",
+    "dir": "ltr",
+    "categories": [
+        "shopping",
+        "food"
+    ],
+    "icons": [
+        {
+            "src": "./assets/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "./assets/icons/icon-192-maskable.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "./assets/icons/icon-512-maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
 }
