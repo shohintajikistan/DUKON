@@ -1,112 +1,100 @@
+// ============================================================
 // SHOHIN MARKET
-// Products module
+// js/products.js
+// Работа с каталогом товаров
+// ============================================================
 
-let products = [];
+const PRODUCTS_FILE = "./data/products.json";
+
+let productsCache = null;
 
 
-// ========================================
-// LOAD PRODUCTS
-// ========================================
+// ------------------------------------------------------------
+// Загрузка товаров
+// ------------------------------------------------------------
 
 async function loadProducts() {
+    if (productsCache !== null) {
+        return productsCache;
+    }
 
     try {
-
-        const response =
-            await fetch("data/products.json", {
-                cache: "no-store"
-            });
+        const response = await fetch(PRODUCTS_FILE, {
+            cache: "no-cache"
+        });
 
         if (!response.ok) {
-
             throw new Error(
-                `HTTP ${response.status}`
+                `Ошибка загрузки товаров: ${response.status}`
             );
         }
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (!Array.isArray(data)) {
-
-            throw new Error(
-                "products.json должен содержать массив"
-            );
+            throw new Error("products.json должен содержать массив товаров");
         }
 
-        products = data;
+        productsCache = data;
 
-        console.log(
-            "SHOHIN MARKET: товары загружены",
-            products.length
-        );
-
-        return products;
+        return productsCache;
 
     } catch (error) {
-
-        console.error(
-            "Ошибка загрузки товаров:",
-            error
-        );
-
-        products = [];
-
-        return [];
+        console.error("SHOHIN PRODUCTS ERROR:", error);
+        throw error;
     }
 }
 
 
-// ========================================
-// GET ALL PRODUCTS
-// ========================================
+// ------------------------------------------------------------
+// Получить все товары
+// ------------------------------------------------------------
 
-function getProducts() {
-
-    return products;
+async function getProducts() {
+    return await loadProducts();
 }
 
 
-// ========================================
-// GET PRODUCT BY ID
-// ========================================
+// ------------------------------------------------------------
+// Найти товар по ID
+// ------------------------------------------------------------
 
-function getProductById(id) {
+async function getProductById(id) {
+    const products = await loadProducts();
 
     return products.find(
-        product =>
-            Number(product.id) ===
-            Number(id)
-    );
+        product => String(product.id) === String(id)
+    ) || null;
 }
 
 
-// ========================================
-// GET PRODUCTS BY CATEGORY
-// ========================================
+// ------------------------------------------------------------
+// Получить товары по категории
+// ------------------------------------------------------------
 
-function getProductsByCategory(category) {
+async function getProductsByCategory(category) {
+    const products = await loadProducts();
+
+    if (!category || category === "all") {
+        return products;
+    }
 
     return products.filter(
-        product =>
-            String(product.category || "")
-                .toLowerCase() ===
-            String(category || "")
-                .toLowerCase()
+        product => product.category === category
     );
 }
 
 
-// ========================================
-// SEARCH PRODUCTS
-// ========================================
+// ------------------------------------------------------------
+// Поиск товаров
+// ------------------------------------------------------------
 
-function searchProductsData(query) {
+async function searchProducts(query) {
+    const products = await loadProducts();
 
-    const text =
-        String(query || "")
-            .trim()
-            .toLowerCase();
+    const text = String(query || "")
+        .trim()
+        .toLowerCase();
 
     if (!text) {
         return products;
@@ -114,98 +102,132 @@ function searchProductsData(query) {
 
     return products.filter(product => {
 
-        const name =
-            String(product.name || "")
-                .toLowerCase();
+        const name = String(product.name || "")
+            .toLowerCase();
 
-        const category =
-            String(product.category || "")
-                .toLowerCase();
+        const description = String(product.description || "")
+            .toLowerCase();
 
-        const description =
-            String(product.description || "")
-                .toLowerCase();
+        const category = String(product.category || "")
+            .toLowerCase();
 
-        const unit =
-            String(product.unit || "")
-                .toLowerCase();
+        const tags = Array.isArray(product.tags)
+            ? product.tags.join(" ").toLowerCase()
+            : String(product.tags || "").toLowerCase();
 
         return (
             name.includes(text) ||
-            category.includes(text) ||
             description.includes(text) ||
-            unit.includes(text)
+            category.includes(text) ||
+            tags.includes(text)
         );
     });
 }
 
 
-// ========================================
-// AVAILABLE PRODUCTS
-// ========================================
+// ------------------------------------------------------------
+// Получить список категорий
+// ------------------------------------------------------------
 
-function getAvailableProducts() {
+async function getCategories() {
+    const products = await loadProducts();
 
-    return products.filter(
-        product =>
-            product.available === true
-    );
+    const categories = [];
+
+    products.forEach(product => {
+
+        const category = product.category;
+
+        if (
+            category &&
+            !categories.includes(category)
+        ) {
+            categories.push(category);
+        }
+    });
+
+    return categories;
 }
 
 
-// ========================================
-// CATEGORIES
-// ========================================
+// ------------------------------------------------------------
+// Проверка доступности товара
+// ------------------------------------------------------------
 
-function getCategories() {
+function isProductAvailable(product) {
+    if (!product) {
+        return false;
+    }
 
-    return [
-        ...new Set(
-            products
-                .map(
-                    product =>
-                        product.category
-                )
-                .filter(Boolean)
-        )
-    ];
+    if (product.available === false) {
+        return false;
+    }
+
+    if (
+        typeof product.stock === "number" &&
+        product.stock <= 0
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 
-// ========================================
-// PRODUCT COUNT
-// ========================================
+// ------------------------------------------------------------
+// Форматирование цены
+// ------------------------------------------------------------
 
-function getProductsCount() {
+function formatPrice(price) {
+    const number = Number(price);
 
-    return products.length;
+    if (!Number.isFinite(number)) {
+        return "0 сомони";
+    }
+
+    return new Intl.NumberFormat("ru-RU", {
+        maximumFractionDigits: 0
+    }).format(number) + " сомони";
 }
 
 
-// ========================================
-// CATEGORY COUNT
-// ========================================
+// ------------------------------------------------------------
+// Получить цену числом
+// ------------------------------------------------------------
 
-function getCategoryCount(category) {
+function getProductPrice(product) {
+    const price = Number(product?.price);
 
-    return getProductsByCategory(
-        category
-    ).length;
+    if (!Number.isFinite(price)) {
+        return 0;
+    }
+
+    return price;
 }
 
 
-// ========================================
-// EXPORT
-// ========================================
+// ------------------------------------------------------------
+// Очистить кэш каталога
+// ------------------------------------------------------------
+
+function clearProductsCache() {
+    productsCache = null;
+}
+
+
+// ------------------------------------------------------------
+// Экспорт
+// ------------------------------------------------------------
 
 export {
     loadProducts,
     getProducts,
     getProductById,
     getProductsByCategory,
-    searchProductsData,
-    getAvailableProducts,
+    searchProducts,
     getCategories,
-    getProductsCount,
-    getCategoryCount
+    isProductAvailable,
+    formatPrice,
+    getProductPrice,
+    clearProductsCache
 };
