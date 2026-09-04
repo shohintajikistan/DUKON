@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="32" y="32" width="448" height="448" rx="104" fill="#0B3B2D"/>
+
+  <!-- Falcon / SH symbol -->
+  <path
+    d="M112 248
+       L208 150
+       L256 202
+       L304 150
+       L400 248
+       L342 228
+       L302 270
+       L256 224
+       L210 270
+       L170 228 Z"
+    fill="#A3E635"/>
+
+  <!-- Falcon body -->
+  <path
+    d="M176 266
+       L256 214
+       L336 266
+       L306 348
+       L256 386
+       L206 348 Z"
+    fill="#FFFFFF"/>
+
+  <!-- Falcon head -->
+  <path
+    d="M256 214
+       L330 176
+       L314 244
+       L270 260 Z"
+    fill="#FFFFFF"/>
+
+  <!-- Beak -->
+  <path
+    d="M330 176
+       L382 192
+       L318 210 Z"
+    fill="#A3E635"/>
+
+  <!-- Eye -->
+  <circle cx="308" cy="207" r="8" fill="#0B3B2D"/>
+
+  <!-- SH monogram -->
+  <path
+    d="M185 300
+       C185 282 202 272 224 272
+       C246 272 258 282 258 298
+       C258 313 248 319 225 324
+       L215 326
+       C207 328 204 331 204 336
+       C204 342 211 346 222 346
+       C234 346 241 342 244 334"
+    fill="none"
+    stroke="#0B3B2D"
+    stroke-width="12"
+    stroke-linecap="round"/>
+
+  <path
+    d="M268 278
+       L268 350
+       M268 314
+       L318 314
+       M318 278
+       L318 350"
+    fill="none"
+    stroke="#0B3B2D"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+</svg>
