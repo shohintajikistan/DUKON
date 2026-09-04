@@ -7,14 +7,11 @@
 import {
     getProducts,
     getProductById,
-    getProductsByCategory,
-    searchProducts,
     formatPrice,
     isProductAvailable
 } from "./products.js";
 
 import {
-    getCartItems,
     addToCart,
     increaseCartItem,
     decreaseCartItem,
@@ -46,7 +43,6 @@ import {
 import {
     getSelectedLocation,
     setLocationAddress,
-    clearSelectedLocation,
     getLocationDisplayText,
     initDeliveryMap,
     coordinatesToMapPosition
@@ -54,7 +50,7 @@ import {
 
 
 // ============================================================
-// СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+// СОСТОЯНИЕ
 // ============================================================
 
 const state = {
@@ -69,21 +65,26 @@ const state = {
 
 
 // ============================================================
-// DOM
+// DOM HELPERS
 // ============================================================
 
-const $ = selector =>
-    document.querySelector(selector);
+const $ = selector => {
+    return document.querySelector(selector);
+};
 
-const $$ = selector =>
-    [...document.querySelectorAll(selector)];
+const $$ = selector => {
+    return [...document.querySelectorAll(selector)];
+};
 
 
 // ============================================================
-// ИНИЦИАЛИЗАЦИЯ
+// INIT
 // ============================================================
 
-document.addEventListener("DOMContentLoaded", initApp);
+document.addEventListener(
+    "DOMContentLoaded",
+    initApp
+);
 
 
 async function initApp() {
@@ -104,17 +105,17 @@ async function initApp() {
 
         renderProducts();
 
-        renderFavorites();
+        await renderFavorites();
 
-        renderCart();
+        await renderCart();
 
         renderOrders();
 
         restoreCheckoutData();
 
-        hideLoader();
-
         showPage("home");
+
+        hideLoader();
 
     } catch (error) {
 
@@ -134,7 +135,7 @@ async function initApp() {
 
 
 // ============================================================
-// ЗАГРУЗКА КАТАЛОГА
+// CATALOG
 // ============================================================
 
 async function loadCatalog() {
@@ -142,19 +143,21 @@ async function loadCatalog() {
     state.products =
         await getProducts();
 
+    if (!Array.isArray(state.products)) {
+        state.products = [];
+    }
+
     return state.products;
 }
 
 
 // ============================================================
-// СОБЫТИЯ
+// EVENTS
 // ============================================================
 
 function bindEvents() {
 
-    // --------------------------------------------------------
-    // Header
-    // --------------------------------------------------------
+    // HEADER
 
     $("#menuButton")?.addEventListener(
         "click",
@@ -172,9 +175,7 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Search
-    // --------------------------------------------------------
+    // SEARCH
 
     $("#search")?.addEventListener(
         "input",
@@ -187,9 +188,81 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Bottom navigation
-    // --------------------------------------------------------
+    // HERO
+
+    $("#heroShopButton")?.addEventListener(
+        "click",
+        () => {
+
+            showPage("home");
+
+            document
+                .querySelector("#productsContainer")
+                ?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+        }
+    );
+
+
+    // ALL CATEGORIES
+
+    $("#allCategoriesButton")?.addEventListener(
+        "click",
+        () => {
+
+            state.currentCategory = "all";
+
+            $$(".category-chip").forEach(
+                button => {
+
+                    button.classList.toggle(
+                        "active",
+                        button.dataset.category === "all"
+                    );
+
+                }
+            );
+
+            renderProducts();
+
+        }
+    );
+
+
+    // ALL PRODUCTS
+
+    $("#allProductsButton")?.addEventListener(
+        "click",
+        () => {
+
+            state.currentCategory = "all";
+            state.currentSearch = "";
+
+            if ($("#search")) {
+                $("#search").value = "";
+            }
+
+            $$(".category-chip").forEach(
+                button => {
+
+                    button.classList.toggle(
+                        "active",
+                        button.dataset.category === "all"
+                    );
+
+                }
+            );
+
+            renderProducts();
+
+        }
+    );
+
+
+    // BOTTOM NAV
 
     $$("[data-nav]").forEach(button => {
 
@@ -201,13 +274,17 @@ function bindEvents() {
                     button.dataset.nav;
 
                 if (page === "menu") {
+
                     openMenu();
+
                     return;
                 }
 
                 showPage(page);
+
             }
         );
+
     });
 
 
@@ -217,9 +294,7 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Menu
-    // --------------------------------------------------------
+    // MENU CARDS
 
     $$(".menu-card").forEach(card => {
 
@@ -235,16 +310,64 @@ function bindEvents() {
                 if (page) {
                     showPage(page);
                 }
+
             }
         );
+
     });
 
 
-    $("#closeMenuButton")?.addEventListener(
-        "click",
-        closeMenu
+    // UNIVERSAL DATA CLOSE
+
+    $$("[data-close-menu]").forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                closeMenu
+            );
+
+        }
     );
 
+
+    $$("[data-close-map]").forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                closeMap
+            );
+
+        }
+    );
+
+
+    $$("[data-close-product]").forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                closeProductModal
+            );
+
+        }
+    );
+
+
+    $$("[data-close-success]").forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                closeSuccessModal
+            );
+
+        }
+    );
+
+
+    // MENU OVERLAY
 
     $("#menuModal")?.addEventListener(
         "click",
@@ -256,13 +379,12 @@ function bindEvents() {
             ) {
                 closeMenu();
             }
+
         }
     );
 
 
-    // --------------------------------------------------------
-    // Cart
-    // --------------------------------------------------------
+    // CART
 
     $("#checkoutButton")?.addEventListener(
         "click",
@@ -270,9 +392,7 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Checkout
-    // --------------------------------------------------------
+    // CHECKOUT
 
     $("#openMapButton")?.addEventListener(
         "click",
@@ -285,18 +405,11 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Map
-    // --------------------------------------------------------
+    // MAP
 
     $("#confirmMapButton")?.addEventListener(
         "click",
         confirmMap
-    );
-
-    $("#closeMapButton")?.addEventListener(
-        "click",
-        closeMap
     );
 
 
@@ -310,18 +423,12 @@ function bindEvents() {
             ) {
                 closeMap();
             }
+
         }
     );
 
 
-    // --------------------------------------------------------
-    // Product modal
-    // --------------------------------------------------------
-
-    $("#closeProductModal")?.addEventListener(
-        "click",
-        closeProductModal
-    );
+    // PRODUCT MODAL
 
     $("#productModal")?.addEventListener(
         "click",
@@ -333,13 +440,12 @@ function bindEvents() {
             ) {
                 closeProductModal();
             }
+
         }
     );
 
 
-    // --------------------------------------------------------
-    // Success modal
-    // --------------------------------------------------------
+    // SUCCESS
 
     $("#successHomeButton")?.addEventListener(
         "click",
@@ -348,6 +454,7 @@ function bindEvents() {
             closeSuccessModal();
 
             showPage("home");
+
         }
     );
 
@@ -359,19 +466,27 @@ function bindEvents() {
             closeSuccessModal();
 
             showPage("orders");
+
         }
     );
 
 
-    $("#closeSuccessModal")?.addEventListener(
+    $("#orderSuccessModal")?.addEventListener(
         "click",
-        closeSuccessModal
+        event => {
+
+            if (
+                event.target ===
+                $("#orderSuccessModal")
+            ) {
+                closeSuccessModal();
+            }
+
+        }
     );
 
 
-    // --------------------------------------------------------
-    // Contact actions
-    // --------------------------------------------------------
+    // CONTACT SHARE
 
     $("#contactShare")?.addEventListener(
         "click",
@@ -379,34 +494,27 @@ function bindEvents() {
     );
 
 
-    // --------------------------------------------------------
-    // Checkout fields
-    // --------------------------------------------------------
+    // CHECKOUT DRAFT
 
-    $("#customerName")?.addEventListener(
-        "input",
-        saveCheckoutDraft
-    );
+    [
+        "#customerName",
+        "#customerPhone",
+        "#address",
+        "#comment"
+    ].forEach(selector => {
 
-    $("#customerPhone")?.addEventListener(
-        "input",
-        saveCheckoutDraft
-    );
+        $(selector)?.addEventListener(
+            "input",
+            saveCheckoutDraft
+        );
 
-    $("#address")?.addEventListener(
-        "input",
-        saveCheckoutDraft
-    );
+    });
 
-    $("#comment")?.addEventListener(
-        "input",
-        saveCheckoutDraft
-    );
 }
 
 
 // ============================================================
-// СТРАНИЦЫ
+// PAGE NAVIGATION
 // ============================================================
 
 function showPage(page) {
@@ -426,24 +534,26 @@ function showPage(page) {
     Object.values(pages).forEach(
         pageElement => {
 
-            if (pageElement) {
-                pageElement.classList.remove(
-                    "active"
-                );
-            }
+            pageElement?.classList.remove(
+                "active"
+            );
+
         }
     );
 
 
     const target =
-        pages[page] || pages.home;
+        pages[page] ||
+        pages.home;
 
 
-    target?.classList.add("active");
+    target?.classList.add(
+        "active"
+    );
 
 
     state.currentPage =
-        page in pages
+        pages[page]
             ? page
             : "home";
 
@@ -457,26 +567,43 @@ function showPage(page) {
     });
 
 
-    if (state.currentPage === "favorites") {
+    if (
+        state.currentPage ===
+        "favorites"
+    ) {
         renderFavorites();
     }
 
-    if (state.currentPage === "cart") {
+
+    if (
+        state.currentPage ===
+        "cart"
+    ) {
         renderCart();
     }
 
-    if (state.currentPage === "orders") {
+
+    if (
+        state.currentPage ===
+        "orders"
+    ) {
         renderOrders();
     }
 
-    if (state.currentPage === "checkout") {
+
+    if (
+        state.currentPage ===
+        "checkout"
+    ) {
         renderCheckoutTotal();
+        updateCheckoutLocation();
     }
+
 }
 
 
 // ============================================================
-// НИЖНЯЯ НАВИГАЦИЯ
+// NAVIGATION ACTIVE
 // ============================================================
 
 function updateNavigation() {
@@ -490,12 +617,14 @@ function updateNavigation() {
             "active",
             page === state.currentPage
         );
+
     });
+
 }
 
 
 // ============================================================
-// КАТЕГОРИИ
+// CATEGORIES
 // ============================================================
 
 function renderCategories() {
@@ -518,10 +647,13 @@ function renderCategories() {
                 product.category
             )
         ) {
+
             categories.push(
                 product.category
             );
+
         }
+
     });
 
 
@@ -529,6 +661,7 @@ function renderCategories() {
         <button
             class="category-chip active"
             data-category="all"
+            type="button"
         >
             Все
         </button>
@@ -541,10 +674,12 @@ function renderCategories() {
             <button
                 class="category-chip"
                 data-category="${escapeHTML(category)}"
+                type="button"
             >
                 ${escapeHTML(category)}
             </button>
         `;
+
     });
 
 
@@ -552,9 +687,7 @@ function renderCategories() {
 
 
     container
-        .querySelectorAll(
-            "[data-category]"
-        )
+        .querySelectorAll("[data-category]")
         .forEach(button => {
 
             button.addEventListener(
@@ -564,35 +697,44 @@ function renderCategories() {
                     state.currentCategory =
                         button.dataset.category;
 
-                    state.currentSearch = "";
+                    state.currentSearch =
+                        "";
 
                     if ($("#search")) {
                         $("#search").value = "";
                     }
 
+
                     container
                         .querySelectorAll(
                             "[data-category]"
                         )
-                        .forEach(item =>
+                        .forEach(item => {
+
                             item.classList.remove(
                                 "active"
-                            )
-                        );
+                            );
+
+                        });
+
 
                     button.classList.add(
                         "active"
                     );
 
+
                     renderProducts();
+
                 }
             );
+
         });
+
 }
 
 
 // ============================================================
-// ТОВАРЫ
+// PRODUCTS
 // ============================================================
 
 function renderProducts() {
@@ -609,12 +751,9 @@ function renderProducts() {
         [...state.products];
 
 
-    // --------------------------------------------------------
-    // Категория
-    // --------------------------------------------------------
-
     if (
-        state.currentCategory !== "all"
+        state.currentCategory !==
+        "all"
     ) {
 
         products =
@@ -623,19 +762,19 @@ function renderProducts() {
                     product.category ===
                     state.currentCategory
             );
+
     }
 
 
-    // --------------------------------------------------------
-    // Поиск
-    // --------------------------------------------------------
-
-    if (state.currentSearch) {
+    if (
+        state.currentSearch.trim()
+    ) {
 
         const query =
             state.currentSearch
                 .toLowerCase()
                 .trim();
+
 
         products =
             products.filter(product => {
@@ -655,20 +794,21 @@ function renderProducts() {
                         product.category || ""
                     ).toLowerCase();
 
+
                 return (
                     name.includes(query) ||
                     description.includes(query) ||
                     category.includes(query)
                 );
+
             });
+
     }
 
 
-    // --------------------------------------------------------
-    // Пустой результат
-    // --------------------------------------------------------
-
-    if (products.length === 0) {
+    if (
+        products.length === 0
+    ) {
 
         container.innerHTML = "";
 
@@ -690,11 +830,12 @@ function renderProducts() {
 
 
     bindProductEvents();
+
 }
 
 
 // ============================================================
-// КАРТОЧКА ТОВАРА
+// PRODUCT CARD
 // ============================================================
 
 function renderProductCard(product) {
@@ -730,6 +871,7 @@ function renderProductCard(product) {
                         : ""
                 }"
                 data-action="favorite"
+                type="button"
                 aria-label="Избранное"
             >
                 ${favorite ? "♥" : "♡"}
@@ -739,6 +881,7 @@ function renderProductCard(product) {
             <button
                 class="product-image-button"
                 data-action="details"
+                type="button"
                 aria-label="Подробнее"
             >
                 <img
@@ -763,9 +906,11 @@ function renderProductCard(product) {
 
                 <h3 class="product-name">
                     ${escapeHTML(
-                        product.name || "Товар"
+                        product.name ||
+                        "Товар"
                     )}
                 </h3>
+
 
                 <div class="product-bottom">
 
@@ -777,7 +922,8 @@ function renderProductCard(product) {
 
                     <span class="product-unit">
                         ${escapeHTML(
-                            product.unit || "шт."
+                            product.unit ||
+                            "шт."
                         )}
                     </span>
 
@@ -790,6 +936,7 @@ function renderProductCard(product) {
                             <button
                                 class="add-cart-button"
                                 data-action="add"
+                                type="button"
                             >
                                 В корзину
                             </button>
@@ -797,6 +944,7 @@ function renderProductCard(product) {
                         : `
                             <button
                                 class="add-cart-button disabled"
+                                type="button"
                                 disabled
                             >
                                 Нет в наличии
@@ -812,7 +960,7 @@ function renderProductCard(product) {
 
 
 // ============================================================
-// СОБЫТИЯ ТОВАРОВ
+// PRODUCT EVENTS
 // ============================================================
 
 function bindProductEvents() {
@@ -832,7 +980,13 @@ function bindProductEvents() {
                         "[data-action]"
                     );
 
+
                 if (!actionButton) {
+
+                    openProductModal(
+                        productId
+                    );
+
                     return;
                 }
 
@@ -841,7 +995,10 @@ function bindProductEvents() {
                     actionButton.dataset.action;
 
 
-                if (action === "favorite") {
+                if (
+                    action ===
+                    "favorite"
+                ) {
 
                     event.preventDefault();
                     event.stopPropagation();
@@ -854,7 +1011,10 @@ function bindProductEvents() {
                 }
 
 
-                if (action === "add") {
+                if (
+                    action ===
+                    "add"
+                ) {
 
                     event.preventDefault();
                     event.stopPropagation();
@@ -867,41 +1027,30 @@ function bindProductEvents() {
                 }
 
 
-                if (action === "details") {
+                if (
+                    action ===
+                    "details"
+                ) {
 
                     event.preventDefault();
+                    event.stopPropagation();
 
                     openProductModal(
                         productId
                     );
+
                 }
+
             }
         );
 
-
-        card.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target.closest(
-                        "[data-action]"
-                    )
-                ) {
-                    return;
-                }
-
-                openProductModal(
-                    productId
-                );
-            }
-        );
     });
+
 }
 
 
 // ============================================================
-// ДОБАВИТЬ В КОРЗИНУ
+// ADD CART
 // ============================================================
 
 async function handleAddToCart(
@@ -931,12 +1080,14 @@ async function handleAddToCart(
             "Не удалось добавить товар",
             "error"
         );
+
     }
+
 }
 
 
 // ============================================================
-// ИЗБРАННОЕ
+// FAVORITES
 // ============================================================
 
 function handleFavorite(productId) {
@@ -945,6 +1096,7 @@ function handleFavorite(productId) {
 
         const result =
             toggleFavorite(productId);
+
 
         updateBadges();
 
@@ -970,12 +1122,14 @@ function handleFavorite(productId) {
             "Не удалось изменить избранное",
             "error"
         );
+
     }
+
 }
 
 
 // ============================================================
-// ИЗБРАННЫЕ ТОВАРЫ
+// FAVORITES PAGE
 // ============================================================
 
 async function renderFavorites() {
@@ -986,16 +1140,51 @@ async function renderFavorites() {
     const empty =
         $("#favoritesEmpty");
 
+
     if (!container) {
         return;
     }
 
 
-    const products =
-        await getFavoriteProducts();
+    try {
+
+        const products =
+            await getFavoriteProducts();
 
 
-    if (products.length === 0) {
+        if (
+            products.length === 0
+        ) {
+
+            container.innerHTML = "";
+
+            empty?.classList.add(
+                "active"
+            );
+
+            return;
+        }
+
+
+        empty?.classList.remove(
+            "active"
+        );
+
+
+        container.innerHTML =
+            products
+                .map(renderProductCard)
+                .join("");
+
+
+        bindProductEvents();
+
+    } catch (error) {
+
+        console.error(
+            "Favorites render error:",
+            error
+        );
 
         container.innerHTML = "";
 
@@ -1003,27 +1192,13 @@ async function renderFavorites() {
             "active"
         );
 
-        return;
     }
 
-
-    empty?.classList.remove(
-        "active"
-    );
-
-
-    container.innerHTML =
-        products
-            .map(renderProductCard)
-            .join("");
-
-
-    bindProductEvents();
 }
 
 
 // ============================================================
-// КОРЗИНА
+// CART
 // ============================================================
 
 async function renderCart() {
@@ -1043,11 +1218,59 @@ async function renderCart() {
     }
 
 
-    const items =
-        await getDetailedCart();
+    try {
+
+        const items =
+            await getDetailedCart();
 
 
-    if (items.length === 0) {
+        if (
+            items.length === 0
+        ) {
+
+            container.innerHTML = "";
+
+            empty?.classList.add(
+                "active"
+            );
+
+            summary?.classList.remove(
+                "active"
+            );
+
+            updateBadges();
+
+            return;
+        }
+
+
+        empty?.classList.remove(
+            "active"
+        );
+
+        summary?.classList.add(
+            "active"
+        );
+
+
+        container.innerHTML =
+            items
+                .map(renderCartItem)
+                .join("");
+
+
+        bindCartEvents();
+
+        await updateCartSummary();
+
+        updateBadges();
+
+    } catch (error) {
+
+        console.error(
+            "Cart render error:",
+            error
+        );
 
         container.innerHTML = "";
 
@@ -1059,37 +1282,13 @@ async function renderCart() {
             "active"
         );
 
-        updateBadges();
-
-        return;
     }
 
-
-    empty?.classList.remove(
-        "active"
-    );
-
-    summary?.classList.add(
-        "active"
-    );
-
-
-    container.innerHTML =
-        items
-            .map(renderCartItem)
-            .join("");
-
-
-    bindCartEvents();
-
-    await updateCartSummary();
-
-    updateBadges();
 }
 
 
 // ============================================================
-// ЭЛЕМЕНТ КОРЗИНЫ
+// CART ITEM
 // ============================================================
 
 function renderCartItem(item) {
@@ -1111,8 +1310,9 @@ function renderCartItem(item) {
                 class="cart-item-image"
                 src="${escapeHTML(image)}"
                 alt="${escapeHTML(
-                    item.name
+                    item.name || "Товар"
                 )}"
+                loading="lazy"
                 onerror="this.src='./assets/products/placeholder.svg'"
             >
 
@@ -1121,9 +1321,11 @@ function renderCartItem(item) {
 
                 <h3>
                     ${escapeHTML(
-                        item.name
+                        item.name ||
+                        "Товар"
                     )}
                 </h3>
+
 
                 <div class="cart-item-price">
                     ${formatPrice(
@@ -1137,17 +1339,23 @@ function renderCartItem(item) {
                     <button
                         class="quantity-button"
                         data-cart-action="decrease"
+                        type="button"
                     >
                         −
                     </button>
 
+
                     <strong>
-                        ${item.quantity}
+                        ${Number(
+                            item.quantity || 0
+                        )}
                     </strong>
+
 
                     <button
                         class="quantity-button"
                         data-cart-action="increase"
+                        type="button"
                     >
                         +
                     </button>
@@ -1165,9 +1373,11 @@ function renderCartItem(item) {
                     )}
                 </strong>
 
+
                 <button
                     class="cart-remove"
                     data-cart-action="remove"
+                    type="button"
                     aria-label="Удалить"
                 >
                     ×
@@ -1181,7 +1391,7 @@ function renderCartItem(item) {
 
 
 // ============================================================
-// СОБЫТИЯ КОРЗИНЫ
+// CART EVENTS
 // ============================================================
 
 function bindCartEvents() {
@@ -1200,7 +1410,11 @@ function bindCartEvents() {
 
                 button.addEventListener(
                     "click",
-                    async () => {
+                    async event => {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
 
                         const action =
                             button.dataset.cartAction;
@@ -1216,6 +1430,7 @@ function bindCartEvents() {
                                 await increaseCartItem(
                                     productId
                                 );
+
                             }
 
 
@@ -1227,6 +1442,7 @@ function bindCartEvents() {
                                 await decreaseCartItem(
                                     productId
                                 );
+
                             }
 
 
@@ -1243,6 +1459,7 @@ function bindCartEvents() {
                                     "Товар удалён",
                                     "info"
                                 );
+
                             }
 
 
@@ -1257,17 +1474,21 @@ function bindCartEvents() {
                                 "Ошибка корзины",
                                 "error"
                             );
+
                         }
+
                     }
                 );
-            }
-        );
+
+            });
+
     });
+
 }
 
 
 // ============================================================
-// ИТОГ КОРЗИНЫ
+// CART SUMMARY
 // ============================================================
 
 async function updateCartSummary() {
@@ -1283,13 +1504,15 @@ async function updateCartSummary() {
 
 
     const total =
-        subtotal + delivery;
+        subtotal +
+        delivery;
 
 
     if ($("#cartSubtotal")) {
 
         $("#cartSubtotal").textContent =
             formatPrice(subtotal);
+
     }
 
 
@@ -1299,6 +1522,7 @@ async function updateCartSummary() {
             delivery > 0
                 ? formatPrice(delivery)
                 : "Бесплатно";
+
     }
 
 
@@ -1306,28 +1530,34 @@ async function updateCartSummary() {
 
         $("#cartTotal").textContent =
             formatPrice(total);
+
     }
 
 
     state.deliveryPrice =
         delivery;
+
 }
 
 
 // ============================================================
-// ДОСТАВКА
+// DELIVERY
 // ============================================================
 
 function calculateDeliveryPrice(
     subtotal
 ) {
 
-    const freeDeliveryFrom = 200;
+    const freeDeliveryFrom =
+        200;
 
-    const standardDelivery = 15;
+    const standardDelivery =
+        15;
 
 
-    if (subtotal <= 0) {
+    if (
+        subtotal <= 0
+    ) {
         return 0;
     }
 
@@ -1350,7 +1580,9 @@ function calculateDeliveryPrice(
 
 async function openCheckout() {
 
-    if (isCartEmpty()) {
+    if (
+        isCartEmpty()
+    ) {
 
         showToast(
             "Корзина пуста",
@@ -1361,16 +1593,20 @@ async function openCheckout() {
     }
 
 
-    showPage("checkout");
+    showPage(
+        "checkout"
+    );
 
-    renderCheckoutTotal();
+
+    await renderCheckoutTotal();
 
     updateCheckoutLocation();
+
 }
 
 
 // ============================================================
-// ИТОГ CHECKOUT
+// CHECKOUT TOTAL
 // ============================================================
 
 async function renderCheckoutTotal() {
@@ -1386,23 +1622,26 @@ async function renderCheckoutTotal() {
 
 
     const total =
-        subtotal + delivery;
+        subtotal +
+        delivery;
 
 
     if ($("#checkoutTotal")) {
 
         $("#checkoutTotal").textContent =
             formatPrice(total);
+
     }
 
 
     state.deliveryPrice =
         delivery;
+
 }
 
 
 // ============================================================
-// ВОССТАНОВИТЬ CHECKOUT
+// RESTORE CHECKOUT
 // ============================================================
 
 function restoreCheckoutData() {
@@ -1429,32 +1668,44 @@ function restoreCheckoutData() {
 
 
     if ($("#customerName")) {
+
         $("#customerName").value =
             savedName || "";
+
     }
+
 
     if ($("#customerPhone")) {
+
         $("#customerPhone").value =
             savedPhone || "";
+
     }
+
 
     if ($("#address")) {
+
         $("#address").value =
             savedAddress || "";
+
     }
 
+
     if ($("#comment")) {
+
         $("#comment").value =
             savedComment || "";
+
     }
 
 
     updateCheckoutLocation();
+
 }
 
 
 // ============================================================
-// СОХРАНЕНИЕ CHECKOUT
+// SAVE CHECKOUT
 // ============================================================
 
 function saveCheckoutDraft() {
@@ -1465,6 +1716,7 @@ function saveCheckoutDraft() {
             "shohin_checkout_name",
             $("#customerName").value
         );
+
     }
 
 
@@ -1474,6 +1726,7 @@ function saveCheckoutDraft() {
             "shohin_checkout_phone",
             $("#customerPhone").value
         );
+
     }
 
 
@@ -1483,6 +1736,7 @@ function saveCheckoutDraft() {
             "shohin_checkout_address",
             $("#address").value
         );
+
     }
 
 
@@ -1492,12 +1746,14 @@ function saveCheckoutDraft() {
             "shohin_checkout_comment",
             $("#comment").value
         );
+
     }
+
 }
 
 
 // ============================================================
-// МЕСТО ДОСТАВКИ
+// DELIVERY LOCATION
 // ============================================================
 
 function updateCheckoutLocation() {
@@ -1508,42 +1764,53 @@ function updateCheckoutLocation() {
 
     if (!location) {
 
-        if ($("#selectedLocationText")) {
+        if (
+            $("#selectedLocationText")
+        ) {
 
             $("#selectedLocationText").textContent =
                 "Место доставки не выбрано";
+
         }
 
         return;
     }
 
 
-    if ($("#selectedLocationText")) {
+    if (
+        $("#selectedLocationText")
+    ) {
 
         $("#selectedLocationText").textContent =
             getLocationDisplayText(
                 location
             );
+
     }
 
 
-    if ($("#address") &&
-        location.address) {
+    if (
+        $("#address") &&
+        location.address
+    ) {
 
         $("#address").value =
             location.address;
+
     }
+
 }
 
 
 // ============================================================
-// КАРТА
+// MAP
 // ============================================================
 
 function openMap() {
 
     const modal =
         $("#mapModal");
+
 
     if (!modal) {
         return;
@@ -1562,34 +1829,48 @@ function openMap() {
         $("#mapPin");
 
 
-    if (!state.mapInitialized) {
+    if (
+        !state.mapInitialized &&
+        map &&
+        pin
+    ) {
 
         initDeliveryMap(
             map,
             pin,
             location => {
 
-                if ($("#selectedLocationText")) {
+                if (
+                    $("#selectedLocationText")
+                ) {
 
                     $("#selectedLocationText").textContent =
                         getLocationDisplayText(
                             location
                         );
+
                 }
 
             }
         );
 
+
         state.mapInitialized =
             true;
+
     }
 
 
     updateMapPin();
 
     updateMapAddress();
+
 }
 
+
+// ============================================================
+// MAP PIN
+// ============================================================
 
 function updateMapPin() {
 
@@ -1625,11 +1906,17 @@ function updateMapPin() {
     pin.style.top =
         `${position.y}%`;
 
+
     pin.classList.add(
         "map-pin-visible"
     );
+
 }
 
+
+// ============================================================
+// MAP ADDRESS
+// ============================================================
 
 function updateMapAddress() {
 
@@ -1637,16 +1924,21 @@ function updateMapAddress() {
         getSelectedLocation();
 
 
-    if ($("#mapAddress")) {
+    if (
+        $("#mapAddress")
+    ) {
 
         $("#mapAddress").value =
-            location?.address || "";
+            location?.address ||
+            "";
+
     }
+
 }
 
 
 // ============================================================
-// ПОДТВЕРДИТЬ КАРТУ
+// CONFIRM MAP
 // ============================================================
 
 function confirmMap() {
@@ -1654,7 +1946,8 @@ function confirmMap() {
     const address =
         $("#mapAddress")
             ?.value
-            .trim() || "";
+            .trim() ||
+        "";
 
 
     const location =
@@ -1681,6 +1974,7 @@ function confirmMap() {
 
         $("#address").value =
             address;
+
     }
 
 
@@ -1695,11 +1989,12 @@ function confirmMap() {
         "Место доставки сохранено",
         "success"
     );
+
 }
 
 
 // ============================================================
-// ЗАКРЫТЬ КАРТУ
+// CLOSE MAP
 // ============================================================
 
 function closeMap() {
@@ -1708,11 +2003,12 @@ function closeMap() {
         ?.classList.remove(
             "active"
         );
+
 }
 
 
 // ============================================================
-// РАЗМЕЩЕНИЕ ЗАКАЗА
+// PLACE ORDER
 // ============================================================
 
 async function placeOrder() {
@@ -1720,38 +2016,41 @@ async function placeOrder() {
     const name =
         $("#customerName")
             ?.value
-            .trim() || "";
+            .trim() ||
+        "";
 
 
     const phone =
         $("#customerPhone")
             ?.value
-            .trim() || "";
+            .trim() ||
+        "";
 
 
     const address =
         $("#address")
             ?.value
-            .trim() || "";
+            .trim() ||
+        "";
 
 
     const comment =
         $("#comment")
             ?.value
-            .trim() || "";
+            .trim() ||
+        "";
 
 
     const payment =
         document.querySelector(
             'input[name="payment"]:checked'
-        )?.value || "cash";
+        )?.value ||
+        "cash";
 
 
-    // --------------------------------------------------------
-    // Проверка имени
-    // --------------------------------------------------------
-
-    if (name.length < 2) {
+    if (
+        name.length < 2
+    ) {
 
         showToast(
             "Введите имя",
@@ -1764,10 +2063,6 @@ async function placeOrder() {
         return;
     }
 
-
-    // --------------------------------------------------------
-    // Проверка телефона
-    // --------------------------------------------------------
 
     const phoneDigits =
         phone.replace(
@@ -1792,11 +2087,9 @@ async function placeOrder() {
     }
 
 
-    // --------------------------------------------------------
-    // Проверка адреса
-    // --------------------------------------------------------
-
-    if (address.length < 3) {
+    if (
+        address.length < 3
+    ) {
 
         showToast(
             "Укажите адрес доставки",
@@ -1809,10 +2102,6 @@ async function placeOrder() {
         return;
     }
 
-
-    // --------------------------------------------------------
-    // Проверка точки карты
-    // --------------------------------------------------------
 
     const location =
         getSelectedLocation();
@@ -1837,7 +2126,9 @@ async function placeOrder() {
             await getDetailedCart();
 
 
-        if (items.length === 0) {
+        if (
+            items.length === 0
+        ) {
 
             showToast(
                 "Корзина пуста",
@@ -1888,41 +2179,27 @@ async function placeOrder() {
                 },
 
                 comment
+
             });
 
-
-        // ----------------------------------------------------
-        // Очистка корзины
-        // ----------------------------------------------------
 
         emptyCart();
 
 
-        // ----------------------------------------------------
-        // Обновление интерфейса
-        // ----------------------------------------------------
-
         updateBadges();
 
-        renderCart();
+        await renderCart();
 
         renderOrders();
 
 
-        // ----------------------------------------------------
-        // Очистка checkout
-        // ----------------------------------------------------
-
         clearCheckoutDraft();
 
-
-        // ----------------------------------------------------
-        // Успешный заказ
-        // ----------------------------------------------------
 
         showOrderSuccess(
             order.id
         );
+
 
     } catch (error) {
 
@@ -1931,17 +2208,20 @@ async function placeOrder() {
             error
         );
 
+
         showToast(
             error.message ||
             "Не удалось оформить заказ",
             "error"
         );
+
     }
+
 }
 
 
 // ============================================================
-// ОЧИСТИТЬ CHECKOUT DRAFT
+// CLEAR CHECKOUT
 // ============================================================
 
 function clearCheckoutDraft() {
@@ -1961,11 +2241,12 @@ function clearCheckoutDraft() {
     localStorage.removeItem(
         "shohin_checkout_comment"
     );
+
 }
 
 
 // ============================================================
-// ЗАКАЗЫ
+// ORDERS
 // ============================================================
 
 function renderOrders() {
@@ -1986,7 +2267,9 @@ function renderOrders() {
         getAllOrders();
 
 
-    if (orders.length === 0) {
+    if (
+        orders.length === 0
+    ) {
 
         container.innerHTML = "";
 
@@ -2010,20 +2293,22 @@ function renderOrders() {
 
 
     bindOrderEvents();
+
 }
 
 
 // ============================================================
-// КАРТОЧКА ЗАКАЗА
+// ORDER CARD
 // ============================================================
 
 function renderOrder(order) {
 
     const statusClass =
         `status-${String(
-            order.status || "new"
+            order.status ||
+            "new"
         ).replace(
-            "_",
+            /_/g,
             "-"
         )}`;
 
@@ -2034,7 +2319,8 @@ function renderOrder(order) {
                 (sum, item) =>
                     sum +
                     Number(
-                        item.quantity || 0
+                        item.quantity ||
+                        0
                     ),
                 0
             )
@@ -2052,6 +2338,7 @@ function renderOrder(order) {
             <div class="order-header">
 
                 <div>
+
                     <strong>
                         Заказ ${escapeHTML(
                             String(order.id)
@@ -2063,6 +2350,7 @@ function renderOrder(order) {
                             order.createdAt
                         )}
                     </span>
+
                 </div>
 
 
@@ -2088,6 +2376,7 @@ function renderOrder(order) {
                     </strong>
                 </div>
 
+
                 <div>
                     Оплата:
                     <strong>
@@ -2098,6 +2387,7 @@ function renderOrder(order) {
                         )}
                     </strong>
                 </div>
+
 
                 <div>
                     Сумма:
@@ -2116,13 +2406,16 @@ function renderOrder(order) {
                 <button
                     class="secondary-button"
                     data-order-action="details"
+                    type="button"
                 >
                     Подробнее
                 </button>
 
+
                 <button
                     class="primary-button"
                     data-order-action="repeat"
+                    type="button"
                 >
                     Повторить
                 </button>
@@ -2131,11 +2424,12 @@ function renderOrder(order) {
 
         </article>
     `;
+
 }
 
 
 // ============================================================
-// СОБЫТИЯ ЗАКАЗОВ
+// ORDER EVENTS
 // ============================================================
 
 function bindOrderEvents() {
@@ -2154,7 +2448,11 @@ function bindOrderEvents() {
 
                 button.addEventListener(
                     "click",
-                    () => {
+                    event => {
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
 
                         const action =
                             button.dataset.orderAction;
@@ -2168,6 +2466,7 @@ function bindOrderEvents() {
                             openOrderDetails(
                                 orderId
                             );
+
                         }
 
 
@@ -2179,23 +2478,31 @@ function bindOrderEvents() {
                             repeatOrder(
                                 orderId
                             );
+
                         }
+
                     }
                 );
-            }
-        );
+
+            });
+
     });
+
 }
 
 
 // ============================================================
-// ПОДРОБНОСТИ ЗАКАЗА
+// ORDER DETAILS
 // ============================================================
 
-function openOrderDetails(orderId) {
+function openOrderDetails(
+    orderId
+) {
 
     const order =
-        getOrderById(orderId);
+        getOrderById(
+            orderId
+        );
 
 
     if (!order) {
@@ -2225,10 +2532,14 @@ function openOrderDetails(orderId) {
 
                         <span>
                             ${escapeHTML(
-                                item.name
+                                item.name ||
+                                "Товар"
                             )}
                             ×
-                            ${item.quantity}
+                            ${Number(
+                                item.quantity ||
+                                0
+                            )}
                         </span>
 
                         <strong>
@@ -2240,6 +2551,7 @@ function openOrderDetails(orderId) {
                     </div>
                 `)
                 .join("");
+
     }
 
 
@@ -2251,6 +2563,7 @@ function openOrderDetails(orderId) {
                     String(order.id)
                 )}
             </h3>
+
 
             <p>
                 ${formatOrderDate(
@@ -2265,36 +2578,54 @@ function openOrderDetails(orderId) {
 
 
             <div class="order-detail-total">
-                <span>Товары</span>
+
+                <span>
+                    Товары
+                </span>
+
                 <strong>
                     ${formatPrice(
                         order.subtotal
                     )}
                 </strong>
+
             </div>
 
 
             <div class="order-detail-total">
-                <span>Доставка</span>
+
+                <span>
+                    Доставка
+                </span>
+
                 <strong>
                     ${
-                        order.deliveryPrice > 0
+                        Number(
+                            order.deliveryPrice ||
+                            0
+                        ) > 0
                             ? formatPrice(
                                 order.deliveryPrice
                             )
                             : "Бесплатно"
                     }
                 </strong>
+
             </div>
 
 
             <div class="order-detail-total grand">
-                <span>Итого</span>
+
+                <span>
+                    Итого
+                </span>
+
                 <strong>
                     ${formatPrice(
                         order.total
                     )}
                 </strong>
+
             </div>
 
 
@@ -2335,17 +2666,22 @@ function openOrderDetails(orderId) {
         "Детали заказа",
         content
     );
+
 }
 
 
 // ============================================================
-// ПОВТОР ЗАКАЗА
+// REPEAT ORDER
 // ============================================================
 
-async function repeatOrder(orderId) {
+async function repeatOrder(
+    orderId
+) {
 
     const order =
-        getOrderById(orderId);
+        getOrderById(
+            orderId
+        );
 
 
     if (!order) {
@@ -2371,7 +2707,9 @@ async function repeatOrder(orderId) {
     let added = 0;
 
 
-    for (const item of order.items) {
+    for (
+        const item of order.items
+    ) {
 
         try {
 
@@ -2388,7 +2726,9 @@ async function repeatOrder(orderId) {
                 "Repeat order item error:",
                 error
             );
+
         }
+
     }
 
 
@@ -2397,14 +2737,18 @@ async function repeatOrder(orderId) {
     await renderCart();
 
 
-    if (added > 0) {
+    if (
+        added > 0
+    ) {
 
         showToast(
             "Товары добавлены в корзину",
             "success"
         );
 
-        showPage("cart");
+        showPage(
+            "cart"
+        );
 
     } else {
 
@@ -2412,7 +2756,9 @@ async function repeatOrder(orderId) {
             "Товары из заказа недоступны",
             "warning"
         );
+
     }
+
 }
 
 
@@ -2446,7 +2792,10 @@ async function openProductModal(
         $("#productModalContent");
 
 
-    if (!modal || !content) {
+    if (
+        !modal ||
+        !content
+    ) {
         return;
     }
 
@@ -2475,7 +2824,8 @@ async function openProductModal(
             <img
                 src="${escapeHTML(image)}"
                 alt="${escapeHTML(
-                    product.name
+                    product.name ||
+                    "Товар"
                 )}"
                 class="product-modal-image"
                 onerror="this.src='./assets/products/placeholder.svg'"
@@ -2485,36 +2835,46 @@ async function openProductModal(
 
 
         <div class="product-modal-category">
+
             ${escapeHTML(
-                product.category || ""
+                product.category ||
+                ""
             )}
+
         </div>
 
 
         <h2>
             ${escapeHTML(
-                product.name
+                product.name ||
+                "Товар"
             )}
         </h2>
 
 
         <p class="product-modal-description">
+
             ${escapeHTML(
-                product.description || ""
+                product.description ||
+                ""
             )}
+
         </p>
 
 
         <div class="product-modal-price">
+
             ${formatPrice(
                 product.price
             )}
 
             <span>
                 / ${escapeHTML(
-                    product.unit || "шт."
+                    product.unit ||
+                    "шт."
                 )}
             </span>
+
         </div>
 
 
@@ -2523,10 +2883,12 @@ async function openProductModal(
             <button
                 class="secondary-button"
                 id="modalFavoriteButton"
+                type="button"
             >
-                ${favorite
-                    ? "♥ В избранном"
-                    : "♡ В избранное"
+                ${
+                    favorite
+                        ? "♥ В избранном"
+                        : "♡ В избранное"
                 }
             </button>
 
@@ -2537,6 +2899,7 @@ async function openProductModal(
                         <button
                             class="primary-button"
                             id="modalAddCartButton"
+                            type="button"
                         >
                             Добавить в корзину
                         </button>
@@ -2544,6 +2907,7 @@ async function openProductModal(
                     : `
                         <button
                             class="primary-button disabled"
+                            type="button"
                             disabled
                         >
                             Нет в наличии
@@ -2567,6 +2931,7 @@ async function openProductModal(
                 openProductModal(
                     product.id
                 );
+
             }
         );
 
@@ -2581,6 +2946,7 @@ async function openProductModal(
                 );
 
                 closeProductModal();
+
             }
         );
 
@@ -2588,11 +2954,12 @@ async function openProductModal(
     modal.classList.add(
         "active"
     );
+
 }
 
 
 // ============================================================
-// ЗАКРЫТЬ PRODUCT MODAL
+// CLOSE PRODUCT MODAL
 // ============================================================
 
 function closeProductModal() {
@@ -2602,8 +2969,10 @@ function closeProductModal() {
             "active"
         );
 
+
     state.currentProduct =
         null;
+
 }
 
 
@@ -2617,6 +2986,7 @@ function openMenu() {
         ?.classList.add(
             "active"
         );
+
 }
 
 
@@ -2626,6 +2996,7 @@ function closeMenu() {
         ?.classList.remove(
             "active"
         );
+
 }
 
 
@@ -2637,10 +3008,13 @@ function showOrderSuccess(
     orderId
 ) {
 
-    if ($("#successOrderId")) {
+    if (
+        $("#successOrderId")
+    ) {
 
         $("#successOrderId").textContent =
             orderId;
+
     }
 
 
@@ -2648,6 +3022,7 @@ function showOrderSuccess(
         ?.classList.add(
             "active"
         );
+
 }
 
 
@@ -2657,6 +3032,7 @@ function closeSuccessModal() {
         ?.classList.remove(
             "active"
         );
+
 }
 
 
@@ -2688,6 +3064,7 @@ function updateBadges() {
         "#favoritesBadge",
         favoritesCount
     );
+
 }
 
 
@@ -2705,14 +3082,24 @@ function setBadge(
     }
 
 
+    const safeCount =
+        Math.max(
+            0,
+            Number(count) || 0
+        );
+
+
     badge.textContent =
-        String(count);
+        String(
+            safeCount
+        );
 
 
     badge.classList.toggle(
         "visible",
-        count > 0
+        safeCount > 0
     );
+
 }
 
 
@@ -2720,7 +3107,9 @@ function setBadge(
 // SEARCH
 // ============================================================
 
-function handleSearch(event) {
+function handleSearch(
+    event
+) {
 
     state.currentSearch =
         event.target.value;
@@ -2735,17 +3124,21 @@ function handleSearch(event) {
 
 
         $$(".category-chip")
-            .forEach(button =>
+            .forEach(button => {
+
                 button.classList.toggle(
                     "active",
                     button.dataset.category ===
                     "all"
-                )
-            );
+                );
+
+            });
+
     }
 
 
     renderProducts();
+
 }
 
 
@@ -2755,12 +3148,18 @@ function clearSearch() {
         "";
 
 
-    if ($("#search")) {
-        $("#search").value = "";
+    if (
+        $("#search")
+    ) {
+
+        $("#search").value =
+            "";
+
     }
 
 
     renderProducts();
+
 }
 
 
@@ -2779,7 +3178,8 @@ async function shareShop() {
     try {
 
         if (
-            navigator.share
+            typeof navigator.share ===
+            "function"
         ) {
 
             await navigator.share(
@@ -2790,14 +3190,28 @@ async function shareShop() {
         }
 
 
-        await navigator.clipboard.writeText(
-            window.location.href
-        );
+        if (
+            navigator.clipboard &&
+            typeof navigator.clipboard.writeText ===
+            "function"
+        ) {
+
+            await navigator.clipboard.writeText(
+                window.location.href
+            );
+
+            showToast(
+                "Ссылка скопирована",
+                "success"
+            );
+
+            return;
+        }
 
 
         showToast(
-            "Ссылка скопирована",
-            "success"
+            "Поделиться сейчас недоступно",
+            "info"
         );
 
     } catch (error) {
@@ -2806,7 +3220,9 @@ async function shareShop() {
             "Share cancelled:",
             error
         );
+
     }
+
 }
 
 
@@ -2826,7 +3242,10 @@ function openSimpleModal(
         $("#productModalContent");
 
 
-    if (!modal || !container) {
+    if (
+        !modal ||
+        !container
+    ) {
         return;
     }
 
@@ -2835,7 +3254,9 @@ function openSimpleModal(
         <div class="simple-modal-content">
 
             <h2>
-                ${escapeHTML(title)}
+                ${escapeHTML(
+                    title
+                )}
             </h2>
 
             ${content}
@@ -2847,6 +3268,7 @@ function openSimpleModal(
     modal.classList.add(
         "active"
     );
+
 }
 
 
@@ -2854,7 +3276,8 @@ function openSimpleModal(
 // TOAST
 // ============================================================
 
-let toastTimer = null;
+let toastTimer =
+    null;
 
 
 function showToast(
@@ -2878,8 +3301,10 @@ function showToast(
 
 
     if (text) {
+
         text.textContent =
             message;
+
     }
 
 
@@ -2894,7 +3319,9 @@ function showToast(
 
 
         icon.textContent =
-            icons[type] || "i";
+            icons[type] ||
+            icons.info;
+
     }
 
 
@@ -2918,6 +3345,7 @@ function showToast(
             },
             3000
         );
+
 }
 
 
@@ -2931,6 +3359,7 @@ function showLoader() {
         ?.classList.add(
             "active"
         );
+
 }
 
 
@@ -2940,6 +3369,7 @@ function hideLoader() {
         ?.classList.remove(
             "active"
         );
+
 }
 
 
@@ -2947,7 +3377,9 @@ function hideLoader() {
 // HTML ESCAPE
 // ============================================================
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
     return String(
         value ?? ""
@@ -2972,6 +3404,7 @@ function escapeHTML(value) {
             /'/g,
             "&#039;"
         );
+
 }
 
 
@@ -2988,7 +3421,9 @@ if (
         () => {
 
             navigator.serviceWorker
-                .register("./sw.js")
+                .register(
+                    "./sw.js"
+                )
                 .then(
                     registration => {
 
@@ -2996,6 +3431,7 @@ if (
                             "SHOHIN MARKET SW:",
                             registration.scope
                         );
+
                     }
                 )
                 .catch(
@@ -3005,8 +3441,11 @@ if (
                             "Service Worker error:",
                             error
                         );
+
                     }
                 );
+
         }
     );
+
 }
