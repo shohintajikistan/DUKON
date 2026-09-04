@@ -1,379 +1,736 @@
-/* ========================================
-   SHOHIN MARKET
-   COMPONENTS
-======================================== */
+ /* =========================================================
+    SHOHIN MARKET
+    COMPONENTS.CSS
+ ========================================================= */
 
 
-/* ========================================
-   PRODUCT COMPONENT
-======================================== */
+/* =========================================================
+   CATEGORY STATES
+========================================================= */
 
-.product-card {
-    isolation: isolate;
-}
+.category-card.active {
+    background: var(--green-dark);
+    color: var(--white);
 
-.product-card .product-image {
-    position: relative;
-}
+    transform: translateY(-2px);
 
-.product-card .favorite-button {
-    z-index: 5;
-}
-
-.product-card .product-info {
-    position: relative;
-    z-index: 2;
-}
-
-
-/* ========================================
-   FAVORITE BUTTON
-======================================== */
-
-.favorite-button {
-    transition:
-        transform .18s ease,
-        background .18s ease,
-        color .18s ease;
-}
-
-.favorite-button:hover {
-    background: var(--lime);
-}
-
-.favorite-button:active {
-    transform: scale(.88);
-}
-
-
-/* ========================================
-   CART COMPONENT
-======================================== */
-
-.cart-item {
-    transition:
-        transform .18s ease,
-        box-shadow .18s ease;
-}
-
-.cart-item:hover {
     box-shadow:
-        0 8px 24px rgba(0, 0, 0, .09);
+        0 10px 22px
+        rgba(11, 61, 46, 0.16);
 }
 
-.cart-quantity button {
-    transition:
-        transform .15s ease,
-        background .15s ease;
+.category-card.active .category-icon {
+    background: rgba(184, 227, 75, 0.18);
 }
 
-.cart-quantity button:hover {
-    background: var(--green-3);
+.category-card.active strong {
+    color: var(--white);
 }
 
-.cart-quantity button:active {
-    transform: scale(.88);
-}
-
-.cart-remove {
-    transition:
-        transform .15s ease,
-        background .15s ease;
-}
-
-.cart-remove:hover {
-    background:
-        rgba(217, 91, 91, .18);
-}
-
-.cart-remove:active {
-    transform: scale(.88);
+.category-card.active small {
+    color: rgba(255, 255, 255, 0.65);
 }
 
 
-/* ========================================
-   ORDER COMPONENT
-======================================== */
+/* =========================================================
+   PRODUCT CARD STATES
+========================================================= */
 
-.order-card {
-    position: relative;
-    overflow: hidden;
+.product-card.unavailable {
+    opacity: 0.58;
 }
 
-.order-card::before {
-    content: "";
+.product-card.unavailable .add-button {
+    background: #b8beb9;
+    cursor: not-allowed;
+}
+
+.product-card.sold-out::after {
+    content: "Нет в наличии";
 
     position: absolute;
 
-    top: 0;
-    left: 0;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
 
-    width: 100%;
-    height: 4px;
+    padding: 7px;
+
+    border-radius: 9px;
 
     background:
-        linear-gradient(
-            90deg,
-            var(--green),
-            var(--lime)
-        );
+        rgba(23, 35, 31, 0.88);
+
+    color:
+        var(--white);
+
+    text-align: center;
+
+    font-size: 9px;
+    font-weight: 800;
 }
 
-.order-status {
+
+/* =========================================================
+   PRODUCT COUNTER
+========================================================= */
+
+.product-counter {
+    display: flex;
+    align-items: center;
+
+    height: 38px;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    background:
+        #eef3ec;
+}
+
+.product-counter button {
+    width: 36px;
+    height: 38px;
+
+    background:
+        transparent;
+
+    color:
+        var(--green-dark);
+
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.product-counter button:active {
+    background:
+        rgba(11, 61, 46, 0.08);
+}
+
+.product-counter span {
+    min-width: 25px;
+
+    text-align: center;
+
+    color:
+        var(--text);
+
+    font-size: 12px;
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   PRODUCT MODAL DETAILS
+========================================================= */
+
+.product-modal-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 13px;
+}
+
+.product-modal-category {
+    padding: 6px 9px;
+
+    border-radius: 8px;
+
+    background:
+        #eaf4dc;
+
+    color:
+        var(--green);
+
+    font-size: 9px;
+    font-weight: 900;
+
+    text-transform: uppercase;
+}
+
+.product-modal-unit {
+    color:
+        var(--muted);
+
+    font-size: 10px;
+}
+
+.product-modal-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.product-modal-actions .product-counter {
+    flex: 0 0 auto;
+}
+
+.product-modal-actions .primary-button {
+    flex: 1;
+}
+
+
+/* =========================================================
+   CART EMPTY / SUMMARY
+========================================================= */
+
+.cart-summary.hidden {
+    display: none;
+}
+
+.cart-container:empty {
+    display: none;
+}
+
+
+/* =========================================================
+   CART ITEM ENHANCEMENTS
+========================================================= */
+
+.cart-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.cart-item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    min-width: 78px;
+}
+
+.cart-item-subtotal {
+    color:
+        var(--green-dark);
+
+    font-size: 13px;
+    font-weight: 900;
+
     white-space: nowrap;
 }
 
 
-/* ========================================
-   INFO COMPONENT
-======================================== */
+/* =========================================================
+   ORDER STATUS
+========================================================= */
 
-.info-card {
+.order-status.new {
+    background:
+        #eaf4dc;
+
+    color:
+        var(--green);
+}
+
+.order-status.processing {
+    background:
+        #fff4d9;
+
+    color:
+        #9b701b;
+}
+
+.order-status.delivery {
+    background:
+        #e5f1fa;
+
+    color:
+        #2d6c98;
+}
+
+.order-status.completed {
+    background:
+        #e1f3e7;
+
+    color:
+        #267349;
+}
+
+.order-status.cancelled {
+    background:
+        #ffe9e7;
+
+    color:
+        var(--danger);
+}
+
+
+/* =========================================================
+   ORDER DETAIL
+========================================================= */
+
+.order-delivery {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        9px 0;
+
+    color:
+        var(--muted);
+
+    font-size: 10px;
+
+    border-bottom:
+        1px solid var(--border);
+
+    margin-bottom: 10px;
+}
+
+.order-delivery-icon {
+    font-size: 15px;
+}
+
+.order-customer {
+    color:
+        var(--muted);
+
+    font-size: 10px;
+
     line-height: 1.5;
+
+    margin-bottom: 10px;
 }
 
 
-/* ========================================
-   FORM COMPONENT
-======================================== */
+/* =========================================================
+   ORDER BUTTONS
+========================================================= */
 
-#checkoutForm {
-    position: relative;
+.order-actions button.primary {
+    background:
+        var(--green-dark);
+
+    color:
+        var(--white);
 }
 
-#checkoutForm label {
-    position: relative;
-}
+.order-actions button.danger {
+    background:
+        #fff0ef;
 
-#checkoutForm input::placeholder,
-#checkoutForm textarea::placeholder,
-.modal-content input::placeholder {
-    color: #9aaaa3;
-}
-
-#checkoutForm input,
-#checkoutForm textarea,
-.modal-content input {
-    transition:
-        border-color .18s ease,
-        box-shadow .18s ease;
+    color:
+        var(--danger);
 }
 
 
-/* ========================================
-   PAYMENT CARDS
-======================================== */
+/* =========================================================
+   FORM VALIDATION
+========================================================= */
 
-.payment-options label {
-    cursor: pointer;
-
-    transition:
-        border-color .18s ease,
-        background .18s ease,
-        transform .15s ease;
-}
-
-.payment-options label:has(input:checked) {
-    border-color: var(--green-3);
+.form-group.error input,
+.form-group.error textarea {
+    border-color:
+        var(--danger);
 
     background:
-        rgba(185, 232, 108, .12);
+        #fffafa;
 }
 
-.payment-options label:active {
-    transform: scale(.98);
+.form-error {
+    display: block;
+
+    margin:
+        5px 2px 0;
+
+    color:
+        var(--danger);
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.form-success {
+    display: block;
+
+    margin:
+        5px 2px 0;
+
+    color:
+        var(--green);
+
+    font-size: 9px;
+    font-weight: 700;
 }
 
 
-/* ========================================
-   SEARCH COMPONENT
-======================================== */
+/* =========================================================
+   MAP COMPONENT
+========================================================= */
 
-.search-box {
-    transition:
-        box-shadow .2s ease,
-        border-color .2s ease;
-}
-
-.search-box:focus-within {
-    border-color:
-        rgba(23, 99, 72, .25);
-
+.map-selected {
     box-shadow:
-        0 7px 25px
-        rgba(9, 47, 36, .11);
+        inset 0 0 0 3px
+        rgba(32, 163, 111, 0.25);
+}
+
+.map-pin.selected {
+    animation:
+        pinBounce 0.35s ease;
+}
+
+@keyframes pinBounce {
+
+    0% {
+        transform:
+            translate(-50%, -100%)
+            scale(0.7);
+    }
+
+    70% {
+        transform:
+            translate(-50%, -100%)
+            scale(1.12);
+    }
+
+    100% {
+        transform:
+            translate(-50%, -100%)
+            scale(1);
+    }
+
 }
 
 
-/* ========================================
-   CATEGORY COMPONENT
-======================================== */
+/* =========================================================
+   LOCATION INFO
+========================================================= */
 
-.categories button {
+.location-selected {
+    color:
+        var(--green) !important;
+
+    font-weight: 700;
+}
+
+.location-not-selected {
+    color:
+        var(--muted);
+}
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+.menu-card:active {
+    transform:
+        scale(0.96);
+}
+
+.menu-card.active {
+    background:
+        var(--green-dark);
+
+    color:
+        var(--white);
+}
+
+.menu-card.active span {
+    color:
+        var(--lime);
+}
+
+
+/* =========================================================
+   TOAST TYPES
+========================================================= */
+
+.toast.success {
+    background:
+        var(--green-dark);
+}
+
+.toast.error {
+    background:
+        #7d2828;
+}
+
+.toast.warning {
+    background:
+        #805f19;
+}
+
+
+/* =========================================================
+   LOADING SKELETON
+========================================================= */
+
+.skeleton {
     position: relative;
+
     overflow: hidden;
+
+    background:
+        #e9ece6;
 }
 
-.categories button::after {
+.skeleton::after {
     content: "";
 
     position: absolute;
 
     inset: 0;
+
+    transform:
+        translateX(-100%);
 
     background:
         linear-gradient(
-            135deg,
-            rgba(185, 232, 108, .14),
-            transparent 60%
+            90deg,
+            transparent,
+            rgba(255,255,255,0.55),
+            transparent
         );
 
-    opacity: 0;
-
-    transition:
-        opacity .18s ease;
-}
-
-.categories button:hover::after {
-    opacity: 1;
-}
-
-
-/* ========================================
-   HERO COMPONENT
-======================================== */
-
-.hero-content {
     animation:
-        heroContentIn .5s ease;
+        skeletonMove 1.2s infinite;
 }
 
-@keyframes heroContentIn {
+@keyframes skeletonMove {
 
-    from {
-        opacity: 0;
-        transform: translateY(12px);
+    100% {
+        transform:
+            translateX(100%);
     }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 
-/* ========================================
-   BUTTON FEEDBACK
-======================================== */
+/* =========================================================
+   PRODUCT SKELETON
+========================================================= */
 
-.info-card button,
-.cart-summary button,
-#checkoutForm > button,
-.order-actions button,
-.modal-content > button {
-    transition:
-        transform .15s ease,
-        box-shadow .15s ease,
-        background .15s ease;
+.product-skeleton {
+    padding: 10px;
+
+    border-radius:
+        20px;
+
+    background:
+        var(--white);
+
+    box-shadow:
+        var(--shadow-sm);
 }
 
-.info-card button:active,
-.cart-summary button:active,
-#checkoutForm > button:active,
-.order-actions button:active,
-.modal-content > button:active {
-    transform: scale(.98);
+.product-skeleton-image {
+    width: 100%;
+    aspect-ratio: 1 / 0.82;
+
+    margin-bottom: 10px;
+
+    border-radius:
+        15px;
+}
+
+.product-skeleton-line {
+    height: 10px;
+
+    border-radius: 10px;
+
+    margin-bottom: 7px;
+}
+
+.product-skeleton-line.short {
+    width: 45%;
+}
+
+.product-skeleton-line.medium {
+    width: 70%;
+}
+
+.product-skeleton-line.long {
+    width: 90%;
 }
 
 
-/* ========================================
-   MAP
-======================================== */
+/* =========================================================
+   ERROR STATE
+========================================================= */
 
-.map-container {
+.error-state {
+    padding:
+        35px 18px;
+
+    text-align: center;
+}
+
+
+.error-state-icon {
+    width: 60px;
+    height: 60px;
+
+    margin:
+        0 auto
+        12px;
+
+    border-radius: 19px;
+
+    background:
+        #fff0ef;
+
+    color:
+        var(--danger);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 25px;
+}
+
+
+.error-state h3 {
+    color:
+        var(--text);
+
+    font-size: 17px;
+
+    margin-bottom: 6px;
+}
+
+
+.error-state p {
+    color:
+        var(--muted);
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+    margin-bottom: 14px;
+}
+
+
+/* =========================================================
+   NO RESULTS
+========================================================= */
+
+.no-results {
+    grid-column:
+        1 / -1;
+
+    padding:
+        35px 15px;
+
+    text-align: center;
+}
+
+.no-results-icon {
+    font-size: 36px;
+
+    margin-bottom: 10px;
+}
+
+.no-results h3 {
+    color:
+        var(--text);
+
+    font-size: 16px;
+
+    margin-bottom: 5px;
+}
+
+.no-results p {
+    color:
+        var(--muted);
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   RIPPLE
+========================================================= */
+
+.ripple {
     position: relative;
+
+    overflow: hidden;
 }
 
-.map-container::after {
-    content: "";
-
+.ripple-effect {
     position: absolute;
 
-    inset: 0;
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,0.35);
+
+    transform:
+        translate(-50%, -50%)
+        scale(0);
 
     pointer-events: none;
 
-    border-radius: inherit;
-
-    box-shadow:
-        inset 0 0 0 1px
-        rgba(9, 47, 36, .08);
-}
-
-
-/* ========================================
-   MODAL BACKDROP
-======================================== */
-
-.modal {
     animation:
-        backdropIn .18s ease;
+        rippleAnimation 0.55s ease-out;
 }
 
-@keyframes backdropIn {
+@keyframes rippleAnimation {
 
-    from {
+    to {
+        transform:
+            translate(-50%, -50%)
+            scale(25);
+
         opacity: 0;
     }
 
-    to {
-        opacity: 1;
+}
+
+
+/* =========================================================
+   DESKTOP / TABLET
+========================================================= */
+
+@media (min-width: 600px) {
+
+    .product-modal-image {
+        height: 330px;
     }
+
+    .cart-item {
+        padding: 14px;
+    }
+
+    .cart-item-image {
+        width: 80px;
+        height: 80px;
+    }
+
+    .menu-card {
+        min-height: 95px;
+    }
+
 }
 
 
-/* ========================================
-   BOTTOM NAV
-======================================== */
-
-.bottom-nav button:not(.sh-button):hover {
-    background:
-        rgba(9, 47, 36, .06);
-
-    color: var(--green);
-}
-
-.bottom-nav button:not(.sh-button):active {
-    transform: scale(.92);
-}
-
-
-/* ========================================
-   ACCESSIBILITY
-======================================== */
-
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-    outline: 3px solid
-        rgba(185, 232, 108, .65);
-
-    outline-offset: 2px;
-}
-
-
-/* ========================================
+/* =========================================================
    REDUCED MOTION
-======================================== */
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 
     *,
     *::before,
     *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
         scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
+
 }
