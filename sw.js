@@ -1,14 +1,17 @@
 // SHOHIN MARKET
-// Service Worker V2
+// Service Worker V3
+// Без геолокации и без автоматического запроса GPS
 
-const CACHE_NAME = "shohin-market-v2";
+const CACHE_NAME = "shohin-market-v3";
 
 const APP_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
+
   "./css/style.css",
   "./css/components.css",
+
   "./js/app.js",
   "./js/products.js",
   "./js/cart.js",
@@ -16,12 +19,14 @@ const APP_FILES = [
   "./js/orders.js",
   "./js/map.js",
   "./js/storage.js",
+
   "./data/products.json"
 ];
 
-/* ================================
+
+/* =========================================
    INSTALL
-================================ */
+========================================= */
 
 self.addEventListener("install", event => {
 
@@ -44,24 +49,25 @@ self.addEventListener("install", event => {
 });
 
 
-/* ================================
+/* =========================================
    ACTIVATE
-================================ */
+   Удаляем старые версии кэша
+========================================= */
 
 self.addEventListener("activate", event => {
 
   event.waitUntil(
 
     caches.keys()
-      .then(keys => {
+      .then(cacheNames => {
 
         return Promise.all(
 
-          keys.map(key => {
+          cacheNames.map(cacheName => {
 
-            if (key !== CACHE_NAME) {
+            if (cacheName !== CACHE_NAME) {
 
-              return caches.delete(key);
+              return caches.delete(cacheName);
 
             }
 
@@ -83,40 +89,53 @@ self.addEventListener("activate", event => {
 });
 
 
-/* ================================
+/* =========================================
    FETCH
-================================ */
+========================================= */
 
 self.addEventListener("fetch", event => {
 
   const request = event.request;
 
+
   /*
-     HTML и JavaScript всегда
-     сначала пытаемся получить
-     свежими из сети.
+     Работаем только с GET.
   */
 
-  if (
-    request.method === "GET" &&
-    (
-      request.destination === "document" ||
-      request.destination === "script"
-    )
-  ) {
+  if (request.method !== "GET") {
+
+    return;
+
+  }
+
+
+  /*
+     HTML-документы:
+     сначала сеть,
+     если сети нет — кэш.
+  */
+
+  if (request.destination === "document") {
 
     event.respondWith(
 
       fetch(request)
+
         .then(response => {
 
           if (response && response.ok) {
 
-            const copy = response.clone();
+            const responseCopy =
+              response.clone();
 
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(request, copy);
+
+                cache.put(
+                  request,
+                  responseCopy
+                );
+
               });
 
           }
@@ -124,6 +143,61 @@ self.addEventListener("fetch", event => {
           return response;
 
         })
+
+        .catch(() => {
+
+          return caches.match(request)
+            .then(cached => {
+
+              return cached ||
+                caches.match("./index.html");
+
+            });
+
+        })
+
+    );
+
+    return;
+
+  }
+
+
+  /*
+     JavaScript:
+     сначала получаем свежий файл из сети.
+     Если сети нет — используем кэш.
+  */
+
+  if (request.destination === "script") {
+
+    event.respondWith(
+
+      fetch(request)
+
+        .then(response => {
+
+          if (response && response.ok) {
+
+            const responseCopy =
+              response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(cache => {
+
+                cache.put(
+                  request,
+                  responseCopy
+                );
+
+              });
+
+          }
+
+          return response;
+
+        })
+
         .catch(() => {
 
           return caches.match(request);
@@ -138,25 +212,37 @@ self.addEventListener("fetch", event => {
 
 
   /*
-     CSS, изображения, JSON и другие
-     файлы работают через кэш.
+     CSS, изображения, JSON
+     и остальные ресурсы:
+     сначала кэш.
+     Если файла нет — сеть.
   */
 
   event.respondWith(
 
     caches.match(request)
-      .then(cached => {
 
-        if (cached) {
-          return cached;
+      .then(cachedResponse => {
+
+        if (cachedResponse) {
+
+          return cachedResponse;
+
         }
 
         return fetch(request);
 
       })
+
       .catch(() => {
 
-        return caches.match("./index.html");
+        return new Response(
+          "",
+          {
+            status: 503,
+            statusText: "Offline"
+          }
+        );
 
       })
 
