@@ -1,134 +1,318 @@
 [
   {
     "id": 1,
-    "name": "Помидоры",
-    "category": "Овощи",
+    "name": "Молоко 3.2%",
+    "description": "Пастеризованное молоко. Подходит для завтрака, чая и приготовления блюд.",
+    "category": "Молочные продукты",
     "price": 12,
-    "unit": "1 кг",
-    "image": "🍅",
-    "badge": "СВЕЖЕЕ",
+    "unit": "1 л",
+    "image": "./assets/products/milk.jpg",
     "available": true,
-    "description": "Свежие помидоры"
+    "stock": 50,
+    "tags": [
+      "молоко",
+      "молочные",
+      "завтрак"
+    ]
   },
   {
     "id": 2,
-    "name": "Огурцы",
-    "category": "Овощи",
-    "price": 10,
-    "unit": "1 кг",
-    "image": "🥒",
-    "badge": "",
+    "name": "Хлеб белый",
+    "description": "Свежий мягкий хлеб на каждый день.",
+    "category": "Хлеб и выпечка",
+    "price": 4,
+    "unit": "1 шт.",
+    "image": "./assets/products/bread.jpg",
     "available": true,
-    "description": "Свежие огурцы"
+    "stock": 80,
+    "tags": [
+      "хлеб",
+      "батон",
+      "выпечка"
+    ]
   },
   {
     "id": 3,
-    "name": "Яблоки",
-    "category": "Фрукты",
-    "price": 14,
-    "unit": "1 кг",
-    "image": "🍎",
-    "badge": "ХИТ",
+    "name": "Яйца куриные",
+    "description": "Свежие куриные яйца.",
+    "category": "Молочные продукты",
+    "price": 18,
+    "unit": "10 шт.",
+    "image": "./assets/products/eggs.jpg",
     "available": true,
-    "description": "Сочные свежие яблоки"
+    "stock": 40,
+    "tags": [
+      "яйца",
+      "куриные яйца",
+      "завтрак"
+    ]
   },
   {
     "id": 4,
-    "name": "Бананы",
-    "category": "Фрукты",
-    "price": 16,
+    "name": "Рис",
+    "description": "Рис для приготовления плова, гарниров и других блюд.",
+    "category": "Бакалея",
+    "price": 22,
     "unit": "1 кг",
-    "image": "🍌",
-    "badge": "",
+    "image": "./assets/products/rice.jpg",
     "available": true,
-    "description": "Спелые бананы"
+    "stock": 60,
+    "tags": [
+      "рис",
+      "крупа",
+      "плов",
+      "бакалея"
+    ]
   },
   {
     "id": 5,
-    "name": "Молоко",
-    "category": "Молочное",
-    "price": 9,
-    "unit": "1 л",
-    "image": "🥛",
-    "badge": "",
+    "name": "Мука высшего сорта",
+    "description": "Пшеничная мука для выпечки и приготовления домашних блюд.",
+    "category": "Бакалея",
+    "price": 15,
+    "unit": "1 кг",
+    "image": "./assets/products/flour.jpg",
     "available": true,
-    "description": "Молоко"
+    "stock": 45,
+    "tags": [
+      "мука",
+      "пшеница",
+      "выпечка"
+    ]
   },
   {
     "id": 6,
-    "name": "Йогурт",
-    "category": "Молочное",
-    "price": 11,
-    "unit": "450 г",
-    "image": "🥛",
-    "badge": "",
+    "name": "Сахар",
+    "description": "Белый кристаллический сахар.",
+    "category": "Бакалея",
+    "price": 12,
+    "unit": "1 кг",
+    "image": "./assets/products/sugar.jpg",
     "available": true,
-    "description": "Натуральный йогурт"
+    "stock": 70,
+    "tags": [
+      "сахар",
+      "сладкое",
+      "бакалея"
+    ]
   },
   {
     "id": 7,
-    "name": "Куриное филе",
-    "category": "Мясо",
-    "price": 38,
-    "unit": "1 кг",
-    "image": "🍗",
-    "badge": "",
+    "name": "Подсолнечное масло",
+    "description": "Рафинированное подсолнечное масло для приготовления пищи.",
+    "category": "Бакалея",
+    "price": 20,
+    "unit": "1 л",
+    "image": "./assets/products/oil.jpg",
     "available": true,
-    "description": "Свежое куриное филе"
+    "stock": 35,
+    "tags": [
+      "масло",
+      "подсолнечное масло",
+      "кухня"
+    ]
   },
   {
     "id": 8,
-    "name": "Говядина",
-    "category": "Мясо",
-    "price": 65,
+    "name": "Картофель",
+    "description": "Свежий картофель для домашних блюд.",
+    "category": "Овощи",
+    "price": 6,
     "unit": "1 кг",
-    "image": "🥩",
-    "badge": "",
+    "image": "./assets/products/potato.jpg",
     "available": true,
-    "description": "Свежая говядина"
+    "stock": 100,
+    "tags": [
+      "картофель",
+      "овощи",
+      "еда"
+    ]
   },
   {
     "id": 9,
-    "name": "Сок апельсиновый",
-    "category": "Напитки",
-    "price": 15,
-    "unit": "1 л",
-    "image": "🧃",
-    "badge": "",
+    "name": "Лук репчатый",
+    "description": "Свежий репчатый лук.",
+    "category": "Овощи",
+    "price": 5,
+    "unit": "1 кг",
+    "image": "./assets/products/onion.jpg",
     "available": true,
-    "description": "Апельсиновый сок"
+    "stock": 90,
+    "tags": [
+      "лук",
+      "овощи"
+    ]
   },
   {
     "id": 10,
-    "name": "Минеральная вода",
-    "category": "Напитки",
-    "price": 5,
-    "unit": "1.5 л",
-    "image": "💧",
-    "badge": "",
+    "name": "Яблоки",
+    "description": "Свежие сочные яблоки.",
+    "category": "Фрукты",
+    "price": 14,
+    "unit": "1 кг",
+    "image": "./assets/products/apples.jpg",
     "available": true,
-    "description": "Питьевая минеральная вода"
+    "stock": 55,
+    "tags": [
+      "яблоки",
+      "фрукты",
+      "фрукты и овощи"
+    ]
   },
   {
     "id": 11,
-    "name": "Рис",
-    "category": "Бакалея",
-    "price": 13,
+    "name": "Бананы",
+    "description": "Спелые свежие бананы.",
+    "category": "Фрукты",
+    "price": 16,
     "unit": "1 кг",
-    "image": "🍚",
-    "badge": "",
+    "image": "./assets/products/bananas.jpg",
     "available": true,
-    "description": "Рис"
+    "stock": 45,
+    "tags": [
+      "бананы",
+      "фрукты"
+    ]
   },
   {
     "id": 12,
-    "name": "Макароны",
-    "category": "Бакалея",
-    "price": 8,
-    "unit": "500 г",
-    "image": "🍝",
-    "badge": "",
+    "name": "Вода питьевая",
+    "description": "Чистая питьевая вода.",
+    "category": "Напитки",
+    "price": 5,
+    "unit": "1.5 л",
+    "image": "./assets/products/water.jpg",
     "available": true,
-    "description": "Макаронные изделия"
+    "stock": 120,
+    "tags": [
+      "вода",
+      "напитки",
+      "питьевая вода"
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Чай чёрный",
+    "description": "Ароматный чёрный чай для ежедневного употребления.",
+    "category": "Напитки",
+    "price": 18,
+    "unit": "100 г",
+    "image": "./assets/products/tea.jpg",
+    "available": true,
+    "stock": 40,
+    "tags": [
+      "чай",
+      "чёрный чай",
+      "напитки"
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Макароны",
+    "description": "Пшеничные макароны для быстрых и домашних блюд.",
+    "category": "Бакалея",
+    "price": 10,
+    "unit": "500 г",
+    "image": "./assets/products/pasta.jpg",
+    "available": true,
+    "stock": 65,
+    "tags": [
+      "макароны",
+      "паста",
+      "бакалея"
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Куриное филе",
+    "description": "Охлаждённое куриное филе.",
+    "category": "Мясо",
+    "price": 45,
+    "unit": "1 кг",
+    "image": "./assets/products/chicken.jpg",
+    "available": true,
+    "stock": 25,
+    "tags": [
+      "курица",
+      "мясо",
+      "филе"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Говядина",
+    "description": "Свежая говядина для приготовления домашних блюд.",
+    "category": "Мясо",
+    "price": 75,
+    "unit": "1 кг",
+    "image": "./assets/products/beef.jpg",
+    "available": true,
+    "stock": 20,
+    "tags": [
+      "говядина",
+      "мясо"
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Йогурт натуральный",
+    "description": "Натуральный йогурт без лишних добавок.",
+    "category": "Молочные продукты",
+    "price": 9,
+    "unit": "400 г",
+    "image": "./assets/products/yogurt.jpg",
+    "available": true,
+    "stock": 35,
+    "tags": [
+      "йогурт",
+      "молочные",
+      "завтрак"
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Сыр",
+    "description": "Мягкий сыр для завтрака и приготовления блюд.",
+    "category": "Молочные продукты",
+    "price": 35,
+    "unit": "300 г",
+    "image": "./assets/products/cheese.jpg",
+    "available": true,
+    "stock": 30,
+    "tags": [
+      "сыр",
+      "молочные",
+      "завтрак"
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Помидоры",
+    "description": "Свежие красные помидоры.",
+    "category": "Овощи",
+    "price": 15,
+    "unit": "1 кг",
+    "image": "./assets/products/tomatoes.jpg",
+    "available": true,
+    "stock": 50,
+    "tags": [
+      "помидоры",
+      "овощи"
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Огурцы",
+    "description": "Свежие хрустящие огурцы.",
+    "category": "Овощи",
+    "price": 12,
+    "unit": "1 кг",
+    "image": "./assets/products/cucumbers.jpg",
+    "available": true,
+    "stock": 50,
+    "tags": [
+      "огурцы",
+      "овощи"
+    ]
   }
 ]
